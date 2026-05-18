@@ -77,7 +77,11 @@
 
                     <div class="flex items-center justify-between mt-5">
                         <label for="remember_me" class="inline-flex items-center cursor-pointer">
+<<<<<<< Updated upstream
                             <input id="remember_me" type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }} class="rounded border-gray-300 text-andes-verde shadow-sm focus:ring-andes-verde cursor-pointer">
+=======
+                            <input id="remember_me" type="checkbox" name="remember" class="rounded border-gray-300 text-andes-verde shadow-sm focus:ring-andes-verde cursor-pointer">
+>>>>>>> Stashed changes
                             <span class="ms-2 text-sm text-gray-700 font-medium">Recordar mis datos</span>
                         </label>
 
