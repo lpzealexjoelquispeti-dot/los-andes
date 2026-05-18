@@ -1,3 +1,5 @@
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <x-app-layout>
     <x-slot name="header">
         Mi Catálogo de Trajes
@@ -25,7 +27,6 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             @forelse($trajes as $traje)
                 @php
-                    // Preparamos el JSON incluyendo el estado de borrado
                     $trajeJson = $traje->toArray();
                     $trajeJson['is_trashed'] = $traje->trashed();
                     $trajeJson['danza'] = $traje->danza;
@@ -183,10 +184,25 @@
                             Editar Traje
                         </a>
 
-                        {{-- BOTÓN DINÁMICO (DESACTIVAR / REACTIVAR) --}}
+                        {{-- BOTÓN DINÁMICO CON SWEETALERT2 --}}
                         <template x-if="!currentTraje.deleted_at">
-                            <button @click="if(confirm('¿Seguro que quieres desactivar este traje? No aparecerá en el catálogo público.')) document.getElementById('delete-form-' + currentTraje.cod_traje).submit()" 
-                                    class="bg-gray-100 text-gray-400 px-6 rounded-xl hover:bg-andes-rojo hover:text-white transition group flex items-center justify-center">
+                            <button @click="
+                                Swal.fire({
+                                    title: '¿Seguro que quieres desactivar este traje?',
+                                    text: 'No aparecerá en el catálogo público hasta que lo reactives.',
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#d33',
+                                    cancelButtonColor: '#3085d6',
+                                    confirmButtonText: 'Sí, desactivar',
+                                    cancelButtonText: 'Cancelar'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        document.getElementById('delete-form-' + currentTraje.cod_traje).submit();
+                                    }
+                                })
+                            " 
+                            class="bg-gray-100 text-gray-400 px-6 rounded-xl hover:bg-andes-rojo hover:text-white transition group flex items-center justify-center">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </template>
@@ -203,7 +219,7 @@
             </div>
         </div>
 
-        {{-- FORMULARIOS OCULTOS PARA ACCIONES (Fuera del loop para evitar ID duplicados) --}}
+        {{-- FORMULARIOS OCULTOS PARA ACCIONES --}}
         @foreach($trajes as $traje)
             <form id="delete-form-{{ $traje->cod_traje }}" action="{{ route('vendedor.trajes.destroy', $traje->cod_traje) }}" method="POST" style="display: none;">
                 @csrf @method('DELETE')
@@ -214,3 +230,16 @@
         @endforeach
     </div>
 </x-app-layout>
+
+{{-- Alertas globales de éxito para el CRUD --}}
+@if(session('success'))
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: '¡Excelente!',
+            text: "{{ session('success') }}",
+            timer: 2500,
+            showConfirmButton: false
+        });
+    </script>
+@endif
