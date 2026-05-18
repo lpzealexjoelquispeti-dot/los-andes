@@ -63,6 +63,49 @@
                                 </svg>
                                 Tesauro
                             </a>
+                {{-- REPORTES --}}
+<div x-data="{ openReportes: false }" class="pt-2">
+
+    {{-- BOTÓN PRINCIPAL --}}
+    <button
+        @click="openReportes = !openReportes"
+        class="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg font-medium transition text-gray-300 hover:text-white hover:bg-white/5">
+
+        <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-andes-rojo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            <span>Reportes</span>
+        </div>
+
+        <svg :class="openReportes ? 'rotate-180' : ''"
+             class="w-4 h-4 transition-transform duration-300"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+    </button>
+
+    {{-- SUBMENÚ --}}
+    <div x-show="openReportes"
+         x-transition
+         class="mt-2 ml-4 space-y-1"
+         style="display: none;">
+
+        <a href="{{ route('admin.reportes.tesauro') }}"
+           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+            <div class="w-2 h-2 rounded-full bg-andes-amarillo"></div>
+            Reporte Tesauro
+        </a>
+
+        <a href="{{ route('admin.reportes.vendedores') }}"
+           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+            <div class="w-2 h-2 rounded-full bg-andes-verde"></div>
+            Reporte Vendedores
+        </a>
+
+    </div>
+</div>
             @endrole
 
             @role('Vendedor')

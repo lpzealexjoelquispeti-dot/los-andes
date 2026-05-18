@@ -6,82 +6,92 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Traje;
 use App\Models\Tesauro;
+use App\Models\BusquedaLog;
 
 class TrajeController extends Controller
 {
-   public function index(Request $request)
-{
-    $query  = $request->input('q');
-    
-    // CAMBIO CRUCIAL: Añadimos 'unidades' al Eager Loading inicial
-    $trajes = Traje::query()->with(['danza', 'tienda.diseno', 'imagenes', 'unidades']);
+    public function index(Request $request)
+    {
+        $query  = $request->input('q');
+        $trajes = Traje::query()->with(['danza', 'tienda.diseno', 'imagenes', 'unidades']);
 
-    // Variables para la vista
-    $terminosRelacionados = collect();
-    $tipoTraduccion       = null;
+        $terminosRelacionados = collect();
+        $tipoTraduccion       = null;
 
-    if ($query) {
+        if ($query) {
 
-        // CAPA 1: Consultamos el Tesauro (insensible a mayúsculas)
-        $traduccion = Tesauro::whereRaw('LOWER(termino_usuario) = LOWER(?)', [$query])->first();
+            // CAPA 1: Tesauro exacto
+            $traduccion = Tesauro::whereRaw('LOWER(termino_usuario) = LOWER(?)', [$query])->first();
 
-        if ($traduccion) {
-            // ── NIVEL TESAURO (Puntos 4 y 5) ──
-            // Registrar frecuencia de búsqueda (Punto 7)
-            $traduccion->increment('veces_buscado');
+            if ($traduccion) {
+                $traduccion->increment('veces_buscado');
+                $trajes->where('cod_danza_traje', $traduccion->cod_danza_ref);
+                $tipoTraduccion = $traduccion->tipo;
 
-            // Filtrar trajes por la danza referenciada
-            $trajes->where('cod_danza_traje', $traduccion->cod_danza_ref);
-
-            // Guardar tipo para mostrarlo en la vista
-            $tipoTraduccion = $traduccion->tipo;
-
-            // Términos relacionados de la misma danza (Punto 4)
-            $terminosRelacionados = Tesauro::where('cod_danza_ref', $traduccion->cod_danza_ref)
-                ->where('cod_termino', '!=', $traduccion->cod_termino)
-                ->pluck('termino_usuario');
-
-        } else {
-            // ── NIVEL TEXTO ──
-
-            // Punto 3: Verificar si coincide con una danza directamente (relación jerárquica)
-            $danzaEncontrada = \App\Models\Danza::whereRaw('LOWER(nom_danza) LIKE LOWER(?)', ["%{$query}%"])->first();
-
-            if ($danzaEncontrada) {
-                // Filtrar trajes de esa danza
-                $trajes->where('cod_danza_traje', $danzaEncontrada->cod_danza);
-
-                // Mostrar términos del tesauro como subcategorías clicables (Punto 3)
-                $terminosRelacionados = Tesauro::where('cod_danza_ref', $danzaEncontrada->cod_danza)
+                $terminosRelacionados = Tesauro::where('cod_danza_ref', $traduccion->cod_danza_ref)
+                    ->where('cod_termino', '!=', $traduccion->cod_termino)
                     ->pluck('termino_usuario');
+
+                BusquedaLog::create([
+                    'termino_buscado' => $query,
+                    'tipo_resultado'  => 'tesauro',
+                    'cod_danza_ref'   => $traduccion->cod_danza_ref,
+                    'user_id'         => auth()->id(),
+                ]);
+
             } else {
-                // Búsqueda normal por nombre de traje o danza
-                $trajes->where(function($q) use ($query) {
-                    $q->where('nom_traje', 'ilike', "%{$query}%")
-                      ->orWhereHas('danza', fn($d) => $d->where('nom_danza', 'ilike', "%{$query}%"));
-                });
+                // CAPA 2: Danza directa
+                $danzaEncontrada = \App\Models\Danza::whereRaw('LOWER(nom_danza) LIKE LOWER(?)', ["%{$query}%"])->first();
+
+                if ($danzaEncontrada) {
+                    $trajes->where('cod_danza_traje', $danzaEncontrada->cod_danza);
+
+                    $terminosRelacionados = Tesauro::where('cod_danza_ref', $danzaEncontrada->cod_danza)
+                        ->pluck('termino_usuario');
+
+                    BusquedaLog::create([
+                        'termino_buscado' => $query,
+                        'tipo_resultado'  => 'danza',
+                        'cod_danza_ref'   => $danzaEncontrada->cod_danza,
+                        'user_id'         => auth()->id(),
+                    ]);
+
+                } else {
+                    // CAPA 3: Texto libre — detectar si hay resultados
+                    $trajes->where(function($q) use ($query) {
+                        $q->where('nom_traje', 'ilike', "%{$query}%")
+                          ->orWhereHas('danza', fn($d) => $d->where('nom_danza', 'ilike', "%{$query}%"));
+                    });
+
+                    $hayResultados = $trajes->count() > 0;
+
+                    BusquedaLog::create([
+                        'termino_buscado' => $query,
+                        'tipo_resultado'  => $hayResultados ? 'texto' : 'sin_resultado',
+                        'cod_danza_ref'   => null,
+                        'user_id'         => auth()->id(),
+                    ]);
+                }
             }
         }
+
+        $populares = Tesauro::orderByDesc('veces_buscado')
+            ->where('veces_buscado', '>', 0)
+            ->limit(6)
+            ->pluck('termino_usuario');
+
+        $trajes = $trajes->latest()->paginate(12);
+
+        return view('public.catalogo.index', compact(
+            'trajes',
+            'query',
+            'terminosRelacionados',
+            'tipoTraduccion',
+            'populares'
+        ));
     }
 
-    // Términos más buscados (Punto 7)
-    $populares = Tesauro::orderByDesc('veces_buscado')
-        ->where('veces_buscado', '>', 0)
-        ->limit(6)
-        ->pluck('termino_usuario');
-
-    // Mantenemos la paginación limpia de Laravel
-    $trajes = $trajes->latest()->paginate(12);
-
-    return view('public.catalogo.index', compact(
-        'trajes',
-        'query',
-        'terminosRelacionados',
-        'tipoTraduccion',
-        'populares'
-    ));
-}
-    // Endpoint para autocompletado (Punto 2)
+    // Endpoint para autocompletado
     public function autocomplete(Request $request)
     {
         $q = $request->input('q', '');
@@ -99,10 +109,8 @@ class TrajeController extends Controller
     }
 
     public function show($id)
-{
-    // Añadimos 'unidades' al Eager Loading para que la vista reciba las tallas
-    $traje = Traje::with(['danza', 'tienda.diseno', 'imagenes', 'unidades'])->findOrFail($id);
-    
-    return view('public.catalogo.show', compact('traje'));
-}
+    {
+        $traje = Traje::with(['danza', 'tienda.diseno', 'imagenes', 'unidades'])->findOrFail($id);
+        return view('public.catalogo.show', compact('traje'));
+    }
 }
