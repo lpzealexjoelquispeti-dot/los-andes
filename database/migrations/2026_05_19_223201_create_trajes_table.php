@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('trajes', function (Blueprint $table) {
@@ -16,22 +13,21 @@ return new class extends Migration
             $table->string('nom_traje');
             $table->text('des_traje');
             $table->decimal('pre_alquiler', 10, 2);
-            $table->string('talla_traje');
+            // La columna 'talla_traje' ha sido eliminada permanentemente
             $table->string('color_traje');
 
-            // Relaciones
+            // Relaciones (Dependencias de Niveles 1 y 2)
             $table->unsignedBigInteger('cod_tienda_traje');
             $table->unsignedBigInteger('cod_danza_traje');
 
             $table->foreign('cod_tienda_traje')->references('cod_tienda')->on('tiendas')->onDelete('cascade');
             $table->foreign('cod_danza_traje')->references('cod_danza')->on('danzas');
+            
             $table->timestamps();
+            $table->softDeletes(); // Baja lógica global integrada
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('trajes');

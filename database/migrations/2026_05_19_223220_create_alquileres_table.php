@@ -1,17 +1,10 @@
 <?php
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        // Tabla: alquileres
+return new class extends Migration {
+    public function up(): void {
         Schema::create('alquileres', function (Blueprint $table) {
             $table->id('cod_alquiler');
             $table->unsignedBigInteger('cod_usuario_cli');
@@ -28,15 +21,12 @@ return new class extends Migration
             $table->foreign('cod_usuario_cli')->references('id')->on('users');
             $table->foreign('cod_unidad_alq')->references('cod_unidad')->on('inventario_unidades');
             $table->foreign('cod_evento_alq')->references('cod_evento')->on('eventos_folcloricos');
+            
             $table->timestamps();
+            $table->softDeletes();
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
+    public function down(): void {
         Schema::dropIfExists('alquileres');
     }
 };

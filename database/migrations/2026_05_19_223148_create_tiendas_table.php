@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('nom_tie'); // Nombre
             $table->string('dir_tie'); // Dirección
             $table->string('tel_tie'); // WhatsApp
+            $table->string('horario_tie')->nullable(); // Atributo fusionado
             
-            // --- AQUÍ ESTÁ LO QUE FALTABA ---
             $table->string('foto_ref'); // Ruta de la foto JPG
             $table->decimal('latitud', 10, 8); // Coordenada Lat
             $table->decimal('longitud', 11, 8); // Coordenada Lng
@@ -30,6 +30,7 @@ return new class extends Migration
             $table->foreign('cod_usuario_tie')->references('id')->on('users')->onDelete('cascade');
             
             $table->timestamps();
+            $table->softDeletes(); // Baja lógica global integrada
         });
     }
 

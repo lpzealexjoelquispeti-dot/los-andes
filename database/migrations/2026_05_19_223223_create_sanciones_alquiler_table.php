@@ -1,16 +1,10 @@
 <?php
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
+return new class extends Migration {
+    public function up(): void {
         Schema::create('sanciones_alquiler', function (Blueprint $table) {
             $table->id('cod_sancion');
             $table->unsignedBigInteger('cod_alquiler_ref');
@@ -20,15 +14,12 @@ return new class extends Migration
             $table->boolean('pagada')->default(false);
             
             $table->foreign('cod_alquiler_ref')->references('cod_alquiler')->on('alquileres')->onDelete('cascade');
+            
             $table->timestamps();
+            $table->softDeletes();
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
+    public function down(): void {
         Schema::dropIfExists('sanciones_alquiler');
     }
 };

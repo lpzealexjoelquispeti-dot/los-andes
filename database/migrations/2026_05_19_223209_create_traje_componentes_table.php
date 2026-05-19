@@ -19,8 +19,8 @@ return new class extends Migration
                   ->on('trajes')
                   ->onDelete('cascade');
 
-            $table->softDeletes(); 
             $table->timestamps();
+            $table->softDeletes(); 
         });
     }
 
