@@ -23,19 +23,22 @@ class TrajeUnidadController extends Controller
         }
 
         // 1. Traemos el traje activo con todo su desglose físico
+        // Se mantiene ->withTrashed() por seguridad en caso de que se esté auditando un traje recién eliminado
         $trajeActivo = Traje::where('cod_tienda_traje', $tienda->cod_tienda)
             ->withTrashed()
             ->with(['unidades' => function ($q) { $q->withTrashed(); }, 'danza'])
             ->findOrFail($cod_traje);
 
-        // 2. Traemos TODOS los trajes de la tienda para alimentar el carrusel superior
+        // 2. CORREGIDO: Quitamos ->withTrashed() para limpiar el carrusel superior
+        // Ahora, si un traje fue eliminado lógicamente (deleted_at != null), ya NO se cargará en la colección
         $todosLosTrajes = Traje::where('cod_tienda_traje', $tienda->cod_tienda)
-            ->withTrashed()
             ->with(['imagenes', 'unidades' => function ($q) { $q->withTrashed(); }])
             ->latest()
             ->get();
 
         // 3. Prendas dañadas del traje activo para el panel de alertas del index
+        // Al usar $todosLosTrajes->pluck('cod_traje'), automáticamente hereda el filtro 
+        // y solo buscará prendas de trajes que sigan vigentes (activos) en la tienda.
         $unidadesDanadas = InventarioUnidad::whereIn('cod_traje_base', $todosLosTrajes->pluck('cod_traje'))
             ->whereIn('estado_fisico', ['Desgastado', 'En Reparación'])
             ->with('traje')

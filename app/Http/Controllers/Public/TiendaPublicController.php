@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Tienda;
 use App\Models\Tesauro;
+use App\Models\BusquedaLog;
 use Illuminate\Http\Request;
 
 class TiendaPublicController extends Controller
@@ -20,7 +21,7 @@ class TiendaPublicController extends Controller
         $tienda = Tienda::with(['diseno'])->findOrFail($id);
 
         $query                = request('q');
-        $trajes               = $tienda->trajes()->with(['imagenes', 'danza']);
+        $trajes               = $tienda->trajes()->with(['imagenes', 'danza', 'unidades']); // ← unidades agregado
         $terminosRelacionados = collect();
         $tipoTraduccion       = null;
 
@@ -30,19 +31,23 @@ class TiendaPublicController extends Controller
             $traduccion = Tesauro::whereRaw('LOWER(termino_usuario) = LOWER(?)', [$query])->first();
 
             if ($traduccion) {
-                // Registrar frecuencia
                 $traduccion->increment('veces_buscado');
-
                 $trajes->where('cod_danza_traje', $traduccion->cod_danza_ref);
                 $tipoTraduccion = $traduccion->tipo;
 
-                // Términos relacionados de la misma danza
                 $terminosRelacionados = Tesauro::where('cod_danza_ref', $traduccion->cod_danza_ref)
                     ->where('cod_termino', '!=', $traduccion->cod_termino)
                     ->pluck('termino_usuario');
 
+                BusquedaLog::create([
+                    'termino_buscado' => $query,
+                    'tipo_resultado'  => 'tesauro',
+                    'cod_danza_ref'   => $traduccion->cod_danza_ref,
+                    'user_id'         => auth()->id(),
+                ]);
+
             } else {
-                // CAPA 2: Danza directa (jerárquica)
+                // CAPA 2: Danza directa
                 $danzaEncontrada = \App\Models\Danza::whereRaw('LOWER(nom_danza) LIKE LOWER(?)', ["%{$query}%"])->first();
 
                 if ($danzaEncontrada) {
@@ -50,17 +55,33 @@ class TiendaPublicController extends Controller
 
                     $terminosRelacionados = Tesauro::where('cod_danza_ref', $danzaEncontrada->cod_danza)
                         ->pluck('termino_usuario');
+
+                    BusquedaLog::create([
+                        'termino_buscado' => $query,
+                        'tipo_resultado'  => 'danza',
+                        'cod_danza_ref'   => $danzaEncontrada->cod_danza,
+                        'user_id'         => auth()->id(),
+                    ]);
+
                 } else {
                     // CAPA 3: Texto libre
                     $trajes->where(function($q) use ($query) {
                         $q->where('nom_traje', 'ilike', "%{$query}%")
                           ->orWhereHas('danza', fn($d) => $d->where('nom_danza', 'ilike', "%{$query}%"));
                     });
+
+                    $hayResultados = $trajes->count() > 0;
+
+                    BusquedaLog::create([
+                        'termino_buscado' => $query,
+                        'tipo_resultado'  => $hayResultados ? 'texto' : 'sin_resultado',
+                        'cod_danza_ref'   => null,
+                        'user_id'         => auth()->id(),
+                    ]);
                 }
             }
         }
 
-        // Populares de esta tienda (términos buscados frecuentemente)
         $populares = Tesauro::orderByDesc('veces_buscado')
             ->where('veces_buscado', '>', 0)
             ->limit(6)
