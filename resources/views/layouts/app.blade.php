@@ -107,8 +107,7 @@
     </div>
 </div>
             @endrole
-
-            @role('Vendedor')
+@role('Vendedor')
                 <div class="pt-4 pb-2">
                     <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Mi Negocio</p>
                 </div>
@@ -118,42 +117,48 @@
                     Perfil de Tienda
                 </a>
                 
-                
                 @if(!empty($tiendaActiva) && $tiendaActiva->est_tie)
-                <a href="{{ route('vendedor.trajes.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
-                    <svg class="w-5 h-5 text-andes-rojo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
-                    </svg>
-                    Catálogo de Trajes
-                </a>
-                <div class="border-t border-white/10 my-2"></div>
-                <a href="{{ route('vendedor.tienda.diseno') }}" 
-                class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-andes-amarillo/20 transition group">
-                    <svg class="w-5 h-5 text-andes-amarillo group-hover:rotate-12 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
-                    </svg>
-                    <span class="font-bold uppercase text-xs tracking-widest">Personalizar Mi Tienda</span>
-                </a>
+                    <a href="{{ route('vendedor.trajes.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
+                        <svg class="w-5 h-5 text-andes-rojo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                        </svg>
+                        Catálogo de Trajes
+                    </a>
+                    <div class="border-t border-white/10 my-2"></div>
+                    <a href="{{ route('vendedor.tienda.diseno') }}" 
+                       class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-andes-amarillo/20 transition group">
+                        <svg class="w-5 h-5 text-andes-amarillo group-hover:rotate-12 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                        </svg>
+                        <span class="font-bold uppercase text-xs tracking-widest">Personalizar Mi Tienda</span>
+                    </a>
                 @endif
-                @php
-    // Obtenemos el ID del primer traje del vendedor para inicializar el tablero matriz
-    $primerTrajeId = auth()->user()->tiendas()->first()?->trajes()->first()?->cod_traje;
-@endphp
 
-@if($primerTrajeId)
-    <a href="{{ route('vendedor.trajes.unidades.index', $primerTrajeId) }}" 
-       class="flex items-center gap-3 px-5 py-3.5 text-[11px] font-black uppercase tracking-widest text-gray-600 hover:text-andes-verde hover:bg-gray-50 rounded-xl transition-all group">
-        
-        {{-- Icono de Caja / Stock --}}
-        <svg class="w-5 h-5 text-gray-400 group-hover:text-andes-verde transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-        </svg>
-        
-        <span>Inventario</span>
-    </a>
-@endif
-                
-                
+                @php
+                    // Obtenemos el ID del primer traje del vendedor para inicializar los tableros unificados
+                    $primerTrajeId = auth()->user()->tiendas()->first()?->trajes()->first()?->cod_traje;
+                @endphp
+
+                {{-- ══ CONTROL DE SINTONÍA DE MÓDULOS CON STOCK INICIAL ══ --}}
+                @if($primerTrajeId)
+                    <a href="{{ route('vendedor.trajes.unidades.index', $primerTrajeId) }}" 
+                       class="flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition font-medium group">
+                        {{-- Icono de Caja / Stock --}}
+                        <svg class="w-5 h-5 text-gray-400 group-hover:text-andes-verde transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        <span>Inventario</span>
+                    </a>
+
+                    <a href="{{ route('vendedor.trajes.impresion.panel', $primerTrajeId) }}" 
+                       class="flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition font-medium group">
+                        {{-- Icono de Impresora Industrial Térmica --}}
+                        <svg class="w-5 h-5 text-gray-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                        </svg>
+                        <span>Imprimir Etiquetas</span>
+                    </a>
+                @endif
                 
             @endrole
 

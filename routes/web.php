@@ -213,11 +213,16 @@ Route::get('/trajes/{cod_traje}/unidades',        [\App\Http\Controllers\Vendedo
 // Formulario para añadir una nueva unidad física
 Route::get('/trajes/{cod_traje}/unidades/nueva',  [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'create'])
      ->name('trajes.unidades.create');
- 
+ // ── MÓDULO INDUSTRIAL DE IMPRESIÓN Y REPOSICIÓN DE ACCESORIOS ──
+    Route::get('/trajes/{id}/impresion', [App\Http\Controllers\Vendedor\TrajeImpresionController::class, 'panelImpresion'])->name('trajes.impresion.panel');
+    Route::post('/trajes/{id}/impresion/pdf', [App\Http\Controllers\Vendedor\TrajeImpresionController::class, 'descargarPdf'])->name('trajes.impresion.pdf');
+    Route::get('/unidades/{id}/reimprimir/{pieza}', [App\Http\Controllers\Vendedor\TrajeImpresionController::class, 'reimprimirPieza'])->name('unidades.reimprimir.pieza');
 // Guardar la nueva unidad física
 Route::post('/trajes/{cod_traje}/unidades',       [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'store'])
      ->name('trajes.unidades.store');
- 
+Route::post('/trajes/{id}/destroy-total', [App\Http\Controllers\Vendedor\TrajeController::class, 'destroyTotal'])->name('trajes.destroyTotal');
+    Route::post('/trajes/{id}/restore-total', [App\Http\Controllers\Vendedor\TrajeController::class, 'restoreTotal'])->name('trajes.restoreTotal');
+     
 // Editar una unidad específica
 Route::get('/unidades/{id}/editar',               [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'edit'])
      ->name('unidades.edit');
@@ -233,6 +238,7 @@ Route::delete('/unidades/{id}',                   [\App\Http\Controllers\Vendedo
 // Reactivar una unidad dada de baja
 Route::post('/unidades/{id}/restore',             [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'restore'])
      ->name('unidades.restore');
+     
 });
 
 // Rutas de Autenticación de Breeze

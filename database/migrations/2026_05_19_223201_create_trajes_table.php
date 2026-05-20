@@ -10,21 +10,32 @@ return new class extends Migration
     {
         Schema::create('trajes', function (Blueprint $table) {
             $table->id('cod_traje');
+            
+            // Es estrictamente nullable() y se ubica estratégicamente al inicio
+            $table->unsignedBigInteger('cod_traje_padre')->nullable()->after('cod_traje');
+            
             $table->string('nom_traje');
             $table->text('des_traje');
             $table->decimal('pre_alquiler', 10, 2);
-            // La columna 'talla_traje' ha sido eliminada permanentemente
             $table->string('color_traje');
+            
+            $table->enum('genero', ['Masculino', 'Femenino', 'Unisex'])->default('Masculino');
 
-            // Relaciones (Dependencias de Niveles 1 y 2)
+            // Relaciones base
             $table->unsignedBigInteger('cod_tienda_traje');
             $table->unsignedBigInteger('cod_danza_traje');
 
             $table->foreign('cod_tienda_traje')->references('cod_tienda')->on('tiendas')->onDelete('cascade');
             $table->foreign('cod_danza_traje')->references('cod_danza')->on('danzas');
             
+            // Clave Foránea Auto-referencial Blindada
+            $table->foreign('cod_traje_padre')
+                ->references('cod_traje')
+                ->on('trajes')
+                ->onDelete('set null'); // Si borras el padre, el hijo no muere; solo se vuelve independiente (null)
+            
             $table->timestamps();
-            $table->softDeletes(); // Baja lógica global integrada
+            $table->softDeletes(); 
         });
     }
 
