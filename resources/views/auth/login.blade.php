@@ -50,7 +50,7 @@
 
                     <div>
                         <x-input-label for="email" value="Correo Electrónico" class="text-andes-oscuro font-bold" />
-                        <x-text-input id="email" class="block mt-1 w-full border-gray-300 focus:border-andes-rojo focus:ring-andes-rojo rounded-lg shadow-sm bg-gray-50" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" placeholder="ejemplo@correo.com" />
+                        <x-text-input id="email" class="block mt-1 w-full border-gray-300 focus:border-andes-rojo focus:ring-andes-rojo rounded-lg shadow-sm bg-gray-50" type="email" name="email" :value="Illuminate\Support\Facades\Cookie::get('user_email') ?? old('email')" required autofocus autocomplete="username" placeholder="ejemplo@correo.com" />
                         <x-input-error :messages="$errors->get('email')" class="mt-2 text-andes-rojo font-semibold text-sm" />
                     </div>
 
@@ -60,6 +60,7 @@
                             <x-text-input id="password" 
                                         class="block w-full border-gray-300 focus:border-andes-rojo focus:ring-andes-rojo rounded-lg shadow-sm bg-gray-50 pr-10" 
                                         x-bind:type="show ? 'text' : 'password'" 
+                                        :value="Illuminate\Support\Facades\Cookie::get('user_password')"
                                         name="password" required autocomplete="current-password" placeholder="••••••••" />
                             
                             <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-andes-rojo focus:outline-none">
@@ -77,7 +78,7 @@
 
                     <div class="flex items-center justify-between mt-5">
                         <label for="remember_me" class="inline-flex items-center cursor-pointer">
-                            <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-andes-verde shadow-sm focus:ring-andes-verde cursor-pointer">
+                            <input id="remember_me" type="checkbox" name="remember" {{ Illuminate\Support\Facades\Cookie::has('user_email') ? 'checked' : '' }} class="rounded border-gray-300 text-andes-verde shadow-sm focus:ring-andes-verde cursor-pointer">
                             <span class="ms-2 text-sm text-gray-700 font-medium">Recordar mis datos</span>
                         </label>
 
