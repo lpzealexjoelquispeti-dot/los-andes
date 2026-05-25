@@ -34,34 +34,33 @@
 
                 {{-- SI EL USUARIO YA INICIÓ SESIÓN --}}
                 @auth
-    {{-- NUEVO: LINK AL CATÁLOGO MAESTRO --}}
-    <a href="{{ route('public.catalogo.index') }}" 
-       class="text-sm font-black uppercase {{ request()->routeIs('public.catalogo.index') ? 'text-andes-blanco' : 'text-gray-100' }} hover:text-andes-verde transition">
-        Explorar Trajes
-    </a>
+                    <a href="{{ route('public.catalogo.index') }}" 
+                       class="text-sm font-black uppercase {{ request()->routeIs('public.catalogo.index') ? 'text-andes-blanco' : 'text-gray-100' }} hover:text-andes-verde transition">
+                         Explorar Trajes
+                    </a>
 
-    <div class="h-6 w-[1px] bg-gray-600/30"></div> {{-- Separador --}}
+                    <div class="h-6 w-[1px] bg-gray-600/30"></div>
 
-    <a href="{{ route('public.tiendas.index') }}" 
-       class="text-sm font-black uppercase {{ request()->routeIs('public.tiendas.index') ? 'text-andes-blanco' : 'text-gray-100' }} hover:text-andes-verde transition">
-        Ver Tiendas
-    </a>
-    
-    <div class="h-6 w-[1px] bg-gray-600/30"></div>
+                    <a href="{{ route('public.tiendas.index') }}" 
+                       class="text-sm font-black uppercase {{ request()->routeIs('public.tiendas.index') ? 'text-gray-100' : 'text-gray-100' }} hover:text-andes-verde transition">
+                         Ver Tiendas
+                    </a>
+                    
+                    <div class="h-6 w-[1px] bg-gray-600/30"></div>
 
-    <a href="{{ route('dashboard') }}" class="flex items-center gap-2 group">
-        <span class="text-sm font-black uppercase text-gray-100 group-hover:text-andes-rojo transition">Mi Perfil</span>
-        <div class="w-10 h-10 rounded-full bg-andes-amarillo flex items-center justify-center text-white font-black border-2 border-white shadow-md transition group-hover:scale-110">
-            {{ substr(Auth::user()->name, 0, 1) }}
-        </div>
-    </a>
-@endauth
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-2 group">
+                        <span class="text-sm font-black uppercase text-gray-100 group-hover:text-andes-rojo transition">Mi Perfil</span>
+                        <div class="w-10 h-10 rounded-full bg-andes-amarillo flex items-center justify-center text-white font-black border-2 border-white shadow-md transition group-hover:scale-110">
+                            {{ substr(Auth::user()->name, 0, 1) }}
+                        </div>
+                    </a>
+                @endauth
             </div>
         </nav>
     </header>
 
-
     <main>
+        {{-- HERO SECTION --}}
         <div class="relative pt-16 pb-32 flex content-center items-center justify-center min-h-screen">
             <div class="absolute top-0 w-full h-full bg-center bg-cover" style="background-image: url('{{ asset('img/fondo-folklore.jpg') }}');">
                 <span id="blackOverlay" class="w-full h-full absolute opacity-75 bg-andes-oscuro"></span>
@@ -75,7 +74,7 @@
                     Explora el catálogo digital más grande de la calle Los Andes en La Paz. Encuentra tu traje perfecto, descubre nuevas tiendas y conecta con nuestra identidad cultural a un solo clic.
                 </p>
                 <div class="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-                    <a href="#servicios" class="bg-andes-verde hover:bg-green-800 text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-transform transform hover:scale-105 uppercase tracking-wide">
+                    <a href="#catalogo-real" class="bg-andes-verde hover:bg-green-800 text-white font-bold px-8 py-4 rounded-xl shadow-lg transition-transform transform hover:scale-105 uppercase tracking-wide">
                         Ver Catálogo
                     </a>
                     <a href="{{ route('register') }}" class="bg-transparent border-2 border-andes-blanco text-andes-blanco hover:bg-andes-blanco hover:text-andes-oscuro font-bold px-8 py-4 rounded-xl shadow-lg transition-all uppercase tracking-wide">
@@ -91,6 +90,7 @@
             </div>
         </div>
 
+        {{-- SECCIÓN SERVICIOS / CARACTERÍSTICAS --}}
         <section id="servicios" class="pb-20 bg-andes-blanco -mt-24 relative z-20">
             <div class="container mx-auto px-4">
                 <div class="flex flex-wrap">
@@ -137,6 +137,79 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </section>
+
+        {{-- NUEVA SECCIÓN DINÁMICA: MÓDULO DE DANZAS --}}
+        <section class="py-16 bg-gray-50 border-t border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-10 text-center md:text-left">
+                    <h2 class="text-3xl font-black text-andes-oscuro uppercase tracking-tight">Danzas Tradicionales</h2>
+                    <p class="text-gray-500 font-medium mt-1">Línea cultural gestionada por el Administrador del Sistema.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                    @forelse($danzas as $danza)
+                        <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition">
+                            <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-xl mb-4">
+                                🎭
+                            </div>
+                            <h3 class="font-black text-andes-oscuro text-lg uppercase mb-1">{{ $danza->nom_danza }}</h3>
+                            <p class="text-[10px] font-bold text-andes-verde uppercase bg-emerald-50 inline-block px-2 py-0.5 rounded">Vigente en Base de Datos</p>
+                        </div>
+                    @empty
+                        <div class="col-span-full py-12 text-center bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                            <p class="text-gray-400 font-bold uppercase tracking-wider text-sm">Sin expresiones culturales activas por el momento.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </section>
+
+        {{-- NUEVA SECCIÓN DINÁMICA: VITRINA DE TRAJES REALES --}}
+        <section id="catalogo-real" class="py-16 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="mb-10 text-center md:text-left">
+                    <h2 class="text-3xl font-black text-andes-oscuro uppercase tracking-tight">Últimas Colecciones en Vitrina</h2>
+                    <p class="text-gray-500 font-medium mt-1">Prendas añadidas recientemente por los talleres artesanales de la Calle Los Andes.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                    @forelse($trajes as $traje)
+                        <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition flex flex-col h-full">
+                            <div class="aspect-[3/4] bg-gray-100 relative">
+                                @if($traje->imagenes && $traje->imagenes->first())
+                                    <img src="{{ asset('storage/' . $traje->imagenes->first()->ruta_img) }}" class="w-full h-full object-cover">
+                                @else
+                                    <div class="w-full h-full flex flex-col items-center justify-center text-gray-400 font-bold text-[11px] uppercase bg-gray-100 p-4 text-center">
+                                        <span>🏔️ Los Andes</span>
+                                        <span class="text-[9px] font-normal text-gray-400 mt-1">Fotografía en proceso</span>
+                                    </div>
+                                @endif
+                                <span class="absolute bottom-2 left-2 bg-andes-rojo text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase">
+                                    {{ $traje->danza->nom_danza ?? 'Folklore' }}
+                                </span >
+                            </div>
+                            <div class="p-4 flex flex-col flex-grow">
+                                <h3 class="font-black text-andes-oscuro text-sm uppercase line-clamp-2 h-10 mb-2">
+                                    {{ str_replace([' - Varón', ' - Mujer'], '', $traje->nom_traje) }}
+                                </h3>
+                                <div class="mt-auto pt-2 border-t border-gray-100 flex justify-between items-center">
+                                    <p class="text-andes-verde font-black text-base">
+                                        <span class="text-xs">Bs.</span> {{ number_format($traje->pre_alquiler, 0) }}
+                                    </p>
+                                    <span class="text-[9px] font-bold text-gray-500 uppercase bg-gray-100 px-2 py-0.5 rounded">
+                                        {{ $traje->color_traje ?? 'Color Múltiple' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="col-span-full py-16 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                            <p class="text-gray-400 font-bold uppercase tracking-wider text-sm">Los talleres se encuentran actualizando sus catálogos para la siguiente festividad.</p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
         </section>

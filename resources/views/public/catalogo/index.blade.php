@@ -239,7 +239,8 @@
              x-cloak
              style="display: none;">
             
-            <div class="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3rem] overflow-hidden shadow-2xl relative flex flex-col lg:flex-row" 
+            {{-- Añadido max-h-[90vh] y overflow-hidden para blindar las dimensiones maestras del modal --}}
+            <div class="bg-white w-full max-w-5xl h-full max-h-[85vh] lg:max-h-[75vh] rounded-[3rem] overflow-hidden shadow-2xl relative flex flex-col lg:flex-row" 
                  @click.away="closeModal()">
                 
                 {{-- Botón Cerrar --}}
@@ -249,25 +250,27 @@
                 </button>
 
                 {{-- CARRUSEL DE IMÁGENES RECOIL DINÁMICO (Izquierda) --}}
-                <div class="w-full lg:w-1/2 bg-gray-100 flex flex-col h-[40vh] lg:h-auto">
-                    <div class="relative flex-grow flex items-center justify-center overflow-hidden bg-gray-200">
+                {{-- Ajustado de h-auto a lg:h-full para forzar tamaño simétrico --}}
+                <div class="w-full lg:w-1/2 bg-gray-100 flex flex-col h-[40vh] lg:h-full overflow-hidden">
+                    {{-- max-h controlado con object-contain para evitar deformaciones e impedir el desborde externo --}}
+                    <div class="relative flex-grow flex items-center justify-center overflow-hidden bg-gray-50 p-4 h-full">
                         
                         {{-- Foto Activa leyendo el helper reactivo --}}
                         <template x-if="getImagenes().length > 0">
                             <img :src="'/storage/' + getImagenes()[activePhoto].ruta_img" 
-                                 class="w-full h-full object-cover">
+                                 class="w-full h-full max-h-[32vh] lg:max-h-[50vh] object-contain rounded-2xl drop-shadow-md">
                         </template>
                         
                         {{-- Controles Anterior/Siguiente por bloque --}}
                         <template x-if="getImagenes().length > 1">
-                            <div class="absolute inset-0 flex items-center justify-between px-4">
+                            <div class="absolute inset-0 flex items-center justify-between px-6 pointer-events-none">
                                 <button @click="activePhoto = (activePhoto > 0) ? activePhoto - 1 : getImagenes().length - 1" 
-                                        class="bg-white/30 hover:bg-white/60 text-white p-2 rounded-full backdrop-blur-md transition">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
+                                        class="bg-white/70 hover:bg-white text-gray-800 p-2 rounded-full shadow-md transition pointer-events-auto">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>
                                 </button>
                                 <button @click="activePhoto = (activePhoto < getImagenes().length - 1) ? activePhoto + 1 : 0" 
-                                        class="bg-white/30 hover:bg-white/60 text-white p-2 rounded-full backdrop-blur-md transition">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                                        class="bg-white/70 hover:bg-white text-gray-800 p-2 rounded-full shadow-md transition pointer-events-auto">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
                                 </button>
                             </div>
                         </template>
@@ -277,8 +280,8 @@
                     <div class="p-4 bg-white border-t flex gap-2 overflow-x-auto justify-center hide-scrollbar">
                         <template x-for="(img, index) in getImagenes()" :key="index">
                             <button @click="activePhoto = index" 
-                                    class="w-16 h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0"
-                                    :class="activePhoto === index ? 'shadow-lg scale-110' : 'opacity-40 border-transparent'"
+                                    class="w-14 h-14 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0"
+                                    :class="activePhoto === index ? 'shadow-lg scale-105' : 'opacity-40 border-transparent'"
                                     :style="activePhoto === index ? 'border-color: ' + currentTraje.color_tienda : ''">
                                 <img :src="'/storage/' + img.ruta_img" class="w-full h-full object-cover">
                             </button>
@@ -287,9 +290,9 @@
                 </div>
 
                 {{-- INFORMACIÓN MULTI-VERSIÓN (Derecha) --}}
-                <div class="w-full lg:w-1/2 p-8 lg:p-12 flex flex-col overflow-y-auto">
+                <div class="w-full lg:w-1/2 p-8 lg:p-12 flex flex-col overflow-y-auto max-h-[45vh] lg:max-h-full">
                     
-                    {{-- 🛑 SWITCH INTERACTIVO DE GÉNERO (Solo visible si tiene variante de mujer) 🛑 --}}
+                    {{-- 🛑 SWITCH INTERACTIVO DE GÉNERO --}}
                     <template x-if="currentTraje.variante_femenina">
                         <div class="mb-6 p-1 bg-gray-100 rounded-2xl flex border max-w-xs shadow-inner">
                             <button type="button" @click="generoSeleccionado = 'M'; activePhoto = 0"
@@ -312,7 +315,7 @@
                     </div>
 
                     {{-- Nombre dinámico según género --}}
-                    <h2 class="text-3xl lg:text-4xl font-black uppercase leading-tight mb-2 tracking-tighter" 
+                    <h2 class="text-2xl lg:text-3xl font-black uppercase leading-tight mb-2 tracking-tighter" 
                         :style="'color: ' + currentTraje.color_tienda" 
                         x-text="getNombre()"></h2>
                     
@@ -320,21 +323,20 @@
                         Danza Oficial: <span class="text-gray-800" x-text="currentTraje.danza_nombre"></span>
                     </p>
                     
-                    {{-- Precios y Tallas Dinámicos (MODAL ACTUALIZADO) --}}
-                    <div class="grid grid-cols-2 gap-6 py-6 border-y border-gray-100 mb-6 bg-gray-50/50 rounded-3xl px-6">
+                    {{-- Precios y Tallas Dinámicos --}}
+                    <div class="grid grid-cols-2 gap-4 py-5 border-y border-gray-100 mb-6 bg-gray-50/50 rounded-3xl px-6">
                         <div>
                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Precio Alquiler</p>
-                            <p class="text-3xl font-black" :style="'color: ' + currentTraje.color_tienda">
+                            <p class="text-2xl font-black" :style="'color: ' + currentTraje.color_tienda">
                                 Bs. <span x-text="generoSeleccionado === 'F' ? currentTraje.variante_femenina.pre_alquiler : currentTraje.pre_alquiler"></span>
                             </p>
                         </div>
                         <div>
                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Tallas en Stock</p>
                             <div class="flex flex-wrap gap-1.5">
-                                {{-- Bucle dinámico sobre las unidades físicas activas --}}
                                 <template x-if="getUnidades().length > 0">
                                     <template x-for="unidad in getUnidades()" :key="unidad.cod_unidad">
-                                        <span class="text-xs font-black px-2.5 py-1 rounded-lg uppercase border shadow-sm"
+                                        <span class="text-[10px] font-black px-2.5 py-1 rounded-lg uppercase border shadow-sm"
                                               :style="'color: ' + currentTraje.color_tienda + '; border-color: ' + currentTraje.color_tienda + '20; background-color: ' + currentTraje.color_tienda + '08'"
                                               x-text="unidad.talla"></span>
                                     </template>
@@ -355,11 +357,11 @@
                         <p class="text-gray-500 text-sm leading-relaxed italic" x-text="getDescripcion() || 'Sin descripción adicional detallada.'"></p>
                     </div>
 
-                    {{-- Botón WhatsApp Dinámico Enlazado al Bloque Activo --}}
-                    <div>
+                    {{-- Botón WhatsApp Dinámico --}}
+                    <div class="mt-auto">
                         <a :href="'https://wa.me/591' + currentTraje.whatsapp + '?text=Hola! Vengo del catálogo global MundiToys. Me interesa reservar la versión de ' + (generoSeleccionado === 'F' ? 'Damas' : 'Varón') + ' del traje: ' + getNombre()" 
                            target="_blank"
-                           class="w-full py-5 rounded-2xl text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition transform hover:scale-105"
+                           class="w-full py-4 rounded-2xl text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition transform hover:scale-[1.02]"
                            :style="'background-color: ' + currentTraje.color_tienda">
                         
                             <x-si-whatsapp class="w-5 h-5 fill-current" />

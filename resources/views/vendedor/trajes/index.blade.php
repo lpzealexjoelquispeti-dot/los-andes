@@ -34,6 +34,42 @@
             } else {
                 this.currentTraje = this.trajePadre;
             }
+        },
+
+        // Función puente para ejecutar SweetAlert2 en Colección Completa (Grid)
+        confirmarBajaTotal(codTraje) {
+            Swal.fire({
+                title: '¿Quieres dar de baja la colección completa?',
+                text: 'Esta acción desactivará los bloques de Varón y Damas al mismo tiempo.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E53E3E', // Rojo Andes
+                cancelButtonColor: '#718096',
+                confirmButtonText: 'Sí, desactivar todo',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-total-form-' + codTraje).submit();
+                }
+            });
+        },
+
+        // Función puente para ejecutar SweetAlert2 en Variantes Individuales (Modal)
+        confirmarBajaIndividual(codTraje) {
+            Swal.fire({
+                title: '¿Seguro que quieres desactivar esta variante?',
+                text: 'Únicamente se quitará este bloque del catálogo público.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E53E3E', // Rojo Andes
+                cancelButtonColor: '#718096',
+                confirmButtonText: 'Sí, desactivar bloque',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + codTraje).submit();
+                }
+            });
         }
     }">
         
@@ -99,11 +135,11 @@
                     {{-- CONTENEDOR DE LA FOTO + BOTONES DE ATAJO TRANSACCIONAL --}}
                     <div class="relative aspect-[3/4] overflow-hidden bg-gray-200">
                         
-                        {{-- ATAJO RÁPIDO: Dar de Baja Colección Completa (Si está activa) --}}
+                        {{-- ATAJO RÁPIDO: Dar de Baja Colección Completa (Modificado con SweetAlert2) --}}
                         @if(!$ambosBorrados)
                             <div class="absolute top-2 left-2 z-30">
                                 <button type="button" 
-                                        @click.stop="if(confirm('¿Quieres dar de baja la colección completa (Varón y Damas)?')) { document.getElementById('delete-total-form-{{ $traje->cod_traje }}').submit(); }" 
+                                        @click.stop="confirmarBajaTotal('{{ $traje->cod_traje }}')" 
                                         class="bg-black/60 backdrop-blur-sm text-white p-2 rounded-lg hover:bg-andes-rojo hover:scale-105 transition shadow-md flex items-center justify-center group"
                                         title="Desactivar Colección Completa">
                                     <svg class="w-4 h-4 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +153,7 @@
                         @if($ambosBorrados)
                             <div class="absolute top-2 left-2 z-30">
                                 <button type="button" 
-                                        @click.stop="if(confirm('¿Quieres reactivar la colección completa (Varón y Damas) en la vitrina pública?')) { document.getElementById('restore-total-form-{{ $traje->cod_traje }}').submit(); }" 
+                                        @click.stop="document.getElementById('restore-total-form-{{ $traje->cod_traje }}').submit();" 
                                         class="bg-black/60 backdrop-blur-sm text-white p-2 rounded-lg hover:bg-andes-verde hover:scale-105 transition shadow-md flex items-center justify-center group"
                                         title="Reactivar Colección Completa">
                                     <svg class="w-4 h-4 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,8 +330,9 @@
                             Editar Variante
                         </a>
 
+                        {{-- Botón Dar de Baja variante Individual (Modificado con SweetAlert2) --}}
                         <template x-if="!currentTraje.deleted_at">
-                            <button @click="if(confirm('¿Seguro que quieres desactivar únicamente esta variante del catálogo público?')) document.getElementById('delete-form-' + currentTraje.cod_traje).submit()" 
+                            <button @click="confirmarBajaIndividual(currentTraje.cod_traje)" 
                                     class="bg-gray-100 text-gray-400 px-6 rounded-xl hover:bg-andes-rojo hover:text-white transition flex items-center justify-center">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
@@ -346,4 +383,18 @@
 
         @endforeach
     </div>
+
+    {{-- INYECCIÓN DE SWEETALERT2 + COMPORTAMIENTOS AUTOMÁTICOS --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Alerta verde automática que reacciona si Laravel envía un mensaje de éxito ("success")
+        @if(session('success'))
+            Swal.fire({
+                title: '¡Buen trabajo!',
+                text: "{{ session('success') }}",
+                icon: 'success',
+                confirmButtonColor: '#38A169' // Verde Andes
+            });
+        @endif
+    </script>
 </x-app-layout>

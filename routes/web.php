@@ -3,14 +3,22 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-
-
 // ====================================================================
 // 1. ZONA PÚBLICA (Accesible para todos)
 // ====================================================================
 Route::get('/', function () {
-    return view('welcome');
-})->name('inicio'); // <- Le damos el nombre 'inicio' para el controlador
+    // Jalamos las últimas 4 danzas registradas en el sistema central
+    $danzas = \App\Models\Danza::latest()->take(4)->get();
+    
+    // Jalamos los últimos 4 trajes principales en vitrina (excluyendo variantes/hijos)
+    $trajes = \App\Models\Vendedor\Traje::whereNull('cod_traje_padre')
+        ->orWhere('cod_traje_padre', 0)
+        ->latest()
+        ->take(4)
+        ->get();
+
+    return view('welcome', compact('danzas', 'trajes'));
+})->name('inicio');
 
 
 // ====================================================================
@@ -35,13 +43,11 @@ Route::middleware('auth')->group(function () {
 // 3. ZONA SUPER ADMIN (Solo acceso para el rol 'SuperAdmin')
 // ====================================================================
 
-
 /*
 |--------------------------------------------------------------------------
 | PANEL ADMINISTRADOR
 |--------------------------------------------------------------------------
 */
-
 Route::middleware(['auth', 'role:SuperAdmin'])
     ->prefix('admin')
     ->name('admin.')
@@ -52,41 +58,35 @@ Route::middleware(['auth', 'role:SuperAdmin'])
     | DASHBOARD
     |--------------------------------------------------------------------------
     */
-
     Route::get('/dashboard', function () {
         return view('dashboard', [
             'header' => 'Panel de Administración Central'
         ]);
     })->name('dashboard');
 
-
-
     /*
     |--------------------------------------------------------------------------
     | GESTIÓN DE TIENDAS
     |--------------------------------------------------------------------------
     */
-
     Route::get('/tiendas-pendientes', [\App\Http\Controllers\Admin\AdminTiendaController::class, 'index'])
         ->name('tiendas.index');
 
     Route::get('/tiendas/{id}/detalle', [\App\Http\Controllers\Admin\AdminTiendaController::class, 'show'])
         ->name('tiendas.show');
 
+    // Cambiado put por patch según el estándar semántico usado en tus métodos
     Route::patch('/tiendas/{id}/aprobar', [\App\Http\Controllers\Admin\AdminTiendaController::class, 'aprobar'])
         ->name('tiendas.aprobar');
 
     Route::delete('/tiendas/{id}/rechazar', [\App\Http\Controllers\Admin\AdminTiendaController::class, 'rechazar'])
         ->name('tiendas.rechazar');
 
-
-
     /*
     |--------------------------------------------------------------------------
     | MÓDULO DANZAS
     |--------------------------------------------------------------------------
     */
-
     Route::get('/danzas', [\App\Http\Controllers\Admin\DanzaController::class, 'index'])
         ->name('danzas.index');
 
@@ -111,14 +111,11 @@ Route::middleware(['auth', 'role:SuperAdmin'])
     Route::patch('/danzas/{id}/restaurar', [\App\Http\Controllers\Admin\DanzaController::class, 'restore'])
         ->name('danzas.restore');
 
-
-
     /*
     |--------------------------------------------------------------------------
     | MÓDULO TESAURO
     |--------------------------------------------------------------------------
     */
-
     Route::get('/tesauro', [\App\Http\Controllers\Admin\TesauroController::class, 'index'])
         ->name('tesauro.index');
 
@@ -140,23 +137,21 @@ Route::middleware(['auth', 'role:SuperAdmin'])
     Route::patch('/tesauro/{id}/restaurar', [\App\Http\Controllers\Admin\TesauroController::class, 'restore'])
         ->name('tesauro.restore');
 
+    /*
+    |--------------------------------------------------------------------------
+    | REPORTES
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/reportes/tesauro', [\App\Http\Controllers\Admin\Reportes\TesauroReporteController::class, 'index'])->name('reportes.tesauro');
+    Route::get('/reportes/tesauro/pdf', [\App\Http\Controllers\Admin\Reportes\TesauroReporteController::class, 'exportPdf'])->name('reportes.tesauro.pdf');
+    Route::get('/reportes/tesauro/excel', [\App\Http\Controllers\Admin\Reportes\TesauroReporteController::class, 'exportExcel'])->name('reportes.tesauro.excel');
+    Route::get('/reportes/vendedores', [\App\Http\Controllers\Admin\Reportes\VendedorReporteController::class, 'index'])->name('reportes.vendedores');
 
-
-   /*
-|--------------------------------------------------------------------------
-| REPORTES
-|--------------------------------------------------------------------------
-*/
-Route::get('/reportes/tesauro',       [\App\Http\Controllers\Admin\Reportes\TesauroReporteController::class,  'index'])->name('reportes.tesauro');
-    Route::get('/reportes/tesauro/pdf',   [\App\Http\Controllers\Admin\Reportes\TesauroReporteController::class,  'exportPdf'])->name('reportes.tesauro.pdf');
-    Route::get('/reportes/tesauro/excel', [\App\Http\Controllers\Admin\Reportes\TesauroReporteController::class,  'exportExcel'])->name('reportes.tesauro.excel');
-    Route::get('/reportes/vendedores',    [\App\Http\Controllers\Admin\Reportes\VendedorReporteController::class, 'index'])->name('reportes.vendedores');
-/*
+    /*
     |--------------------------------------------------------------------------
     | USUARIOS Y ROLES
     |--------------------------------------------------------------------------
     */
-
     Route::get('/usuarios', [\App\Http\Controllers\Admin\UserController::class, 'index'])
         ->name('users.index');
 
@@ -177,8 +172,8 @@ Route::get('/reportes/tesauro',       [\App\Http\Controllers\Admin\Reportes\Tesa
 
     Route::patch('/usuarios/{id}/regenerar-clave', [\App\Http\Controllers\Admin\UserController::class, 'regeneratePassword'])
         ->name('users.password.regenerate');
-
 });
+
 
 // ====================================================================
 // 4. ZONA VENDEDOR (Solo acceso para el rol 'Vendedor')
@@ -189,75 +184,78 @@ Route::middleware(['auth', 'role:Vendedor'])->prefix('vendedor')->name('vendedor
         return view('dashboard', ['header' => 'Mi Tienda y Negocio']);
     })->name('dashboard');
     
-    // RUTAS DE LA TIENDA
-   // RUTAS DE LA TIENDA (VENDEDOR)
-    Route::get('/mi-tienda', [\App\Http\Controllers\TiendaController::class, 'index'])->name('tienda.index'); // <-- NUEVA RUTA PRINCIPAL
+    // RUTAS DE LA TIENDA (VENDEDOR)
+    Route::get('/mi-tienda', [\App\Http\Controllers\TiendaController::class, 'index'])->name('tienda.index');
     Route::get('/mi-tienda/nueva', [\App\Http\Controllers\TiendaController::class, 'create'])->name('tienda.create');
     Route::post('/mi-tienda', [\App\Http\Controllers\TiendaController::class, 'store'])->name('tienda.store');
     Route::get('/mi-tienda/{id}/editar', [\App\Http\Controllers\TiendaController::class, 'edit'])->name('tienda.edit');
     Route::put('/mi-tienda/{id}', [\App\Http\Controllers\TiendaController::class, 'update'])->name('tienda.update');
     Route::post('/trajes/{id}/restore', [App\Http\Controllers\Vendedor\TrajeController::class, 'restore'])->name('trajes.restore');
 
-    // Tu ruta de resource que ya tenías
+    // Resource de Trajes
     Route::resource('trajes', App\Http\Controllers\Vendedor\TrajeController::class);
     Route::get('/tienda/diseno', [App\Http\Controllers\TiendaController::class, 'diseno'])->name('tienda.diseno');
     Route::post('/tienda/diseno', [App\Http\Controllers\TiendaController::class, 'storeDiseno'])->name('tienda.diseno.store');
+    
+    /*
+    |--------------------------------------------------------------------------
+    | INFORMES ESTADÍSTICOS (AÑADIDO)
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/informes-estadisticos', [\App\Http\Controllers\Vendedor\InformeEstadisticoController::class, 'index'])
+        ->name('informes.index');
+    
     // ── GESTIÓN DE INVENTARIO (UNIDADES FÍSICAS DE LOS TRAJES) ──
-    Route::get('/trajes/{cod_traje}/unidades/danos',  [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'danos'])
-     ->name('trajes.unidades.danos');
+    Route::get('/trajes/{cod_traje}/unidades/danos', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'danos'])
+        ->name('trajes.unidades.danos');
  
-// Listado de unidades de un traje específico
-Route::get('/trajes/{cod_traje}/unidades',        [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'index'])
-     ->name('trajes.unidades.index');
+    Route::get('/trajes/{cod_traje}/unidades', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'index'])
+        ->name('trajes.unidades.index');
  
-// Formulario para añadir una nueva unidad física
-Route::get('/trajes/{cod_traje}/unidades/nueva',  [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'create'])
-     ->name('trajes.unidades.create');
- // ── MÓDULO INDUSTRIAL DE IMPRESIÓN Y REPOSICIÓN DE ACCESORIOS ──
+    Route::get('/trajes/{cod_traje}/unidades/nueva', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'create'])
+        ->name('trajes.unidades.create');
+
+    // ── MÓDULO INDUSTRIAL DE IMPRESIÓN Y REPOSICIÓN DE ACCESORIOS ──
     Route::get('/trajes/{id}/impresion', [App\Http\Controllers\Vendedor\TrajeImpresionController::class, 'panelImpresion'])->name('trajes.impresion.panel');
     Route::post('/trajes/{id}/impresion/pdf', [App\Http\Controllers\Vendedor\TrajeImpresionController::class, 'descargarPdf'])->name('trajes.impresion.pdf');
     Route::get('/unidades/{id}/reimprimir/{pieza}', [App\Http\Controllers\Vendedor\TrajeImpresionController::class, 'reimprimirPieza'])->name('unidades.reimprimir.pieza');
-// Guardar la nueva unidad física
-Route::post('/trajes/{cod_traje}/unidades',       [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'store'])
-     ->name('trajes.unidades.store');
-Route::post('/trajes/{id}/destroy-total', [App\Http\Controllers\Vendedor\TrajeController::class, 'destroyTotal'])->name('trajes.destroyTotal');
+
+    Route::post('/trajes/{cod_traje}/unidades', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'store'])
+        ->name('trajes.unidades.store');
+        
+    Route::post('/trajes/{id}/destroy-total', [App\Http\Controllers\Vendedor\TrajeController::class, 'destroyTotal'])->name('trajes.destroyTotal');
     Route::post('/trajes/{id}/restore-total', [App\Http\Controllers\Vendedor\TrajeController::class, 'restoreTotal'])->name('trajes.restoreTotal');
-     
-// Editar una unidad específica
-Route::get('/unidades/{id}/editar',               [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'edit'])
-     ->name('unidades.edit');
+         
+    Route::get('/unidades/{id}/editar', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'edit'])
+        ->name('unidades.edit');
  
-// Actualizar datos de la unidad física
-Route::put('/unidades/{id}',                      [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'update'])
-     ->name('unidades.update');
+    Route::put('/unidades/{id}', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'update'])
+        ->name('unidades.update');
  
-// Dar de baja (Soft Delete)
-Route::delete('/unidades/{id}',                   [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'destroy'])
-     ->name('unidades.destroy');
+    Route::delete('/unidades/{id}', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'destroy'])
+        ->name('unidades.destroy');
  
-// Reactivar una unidad dada de baja
-Route::post('/unidades/{id}/restore',             [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'restore'])
-     ->name('unidades.restore');
-     
+    Route::post('/unidades/{id}/restore', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'restore'])
+        ->name('unidades.restore');
 });
 
-// Rutas de Autenticación de Breeze
 
 // ====================================================================
-// 4. ZONA USUARIO COMUN (Solo acceso para el rol 'COMUN')
+// 5. ZONA USUARIO COMÚN (Marketplace Público)
 // ====================================================================
-// Rutas públicas (accesibles tras loguearse como usuario común)
-// Rutas para el Marketplace Público
 Route::middleware(['auth'])->group(function () {
     Route::get('/explorar-tiendas', [App\Http\Controllers\Public\TiendaPublicController::class, 'index'])->name('public.tiendas.index');
     Route::get('/tienda/{id}', [App\Http\Controllers\Public\TiendaPublicController::class, 'show'])->name('public.tiendas.show');
+    
     // --- Rutas del Catálogo de Trajes (Capa Cliente) ---
-Route::get('/catalogo', [App\Http\Controllers\Public\TrajeController::class, 'index'])
-    ->name('public.catalogo.index');
+    Route::get('/catalogo', [App\Http\Controllers\Public\TrajeController::class, 'index'])
+        ->name('public.catalogo.index');
 
-Route::get('/traje/{id}', [App\Http\Controllers\Public\TrajeController::class, 'show'])
-    ->name('public.trajes.show');
-     Route::get('/api/tesauro/autocomplete', function(\Illuminate\Http\Request $request) {
+    Route::get('/traje/{id}', [App\Http\Controllers\Public\TrajeController::class, 'show'])
+        ->name('public.trajes.show');
+
+    // Autocompletado del Tesauro
+    Route::get('/api/tesauro/autocomplete', function(\Illuminate\Http\Request $request) {
         $q = $request->input('q', '');
         if (strlen($q) < 2) return response()->json([]);
         $terminos = \App\Models\Tesauro::whereRaw('LOWER(termino_usuario) LIKE LOWER(?)', ["%{$q}%"])
@@ -267,4 +265,5 @@ Route::get('/traje/{id}', [App\Http\Controllers\Public\TrajeController::class, '
         return response()->json($terminos);
     })->name('public.tesauro.autocomplete');
 });
+
 require __DIR__.'/auth.php';
