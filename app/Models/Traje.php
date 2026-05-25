@@ -23,7 +23,8 @@ class Traje extends Model
         'des_traje', 
         'pre_alquiler', 
         'talla_traje', 
-        'color_traje', 
+        'color_traje',
+        'genero',
         'cod_tienda_traje', // Llave foránea hacia Tiendas
         'cod_danza_traje',   // Llave foránea hacia Danzas
         'cod_traje_padre'   // <-- Agregado para permitir registrar variantes sin errores de MassAssignment
@@ -76,5 +77,10 @@ class Traje extends Model
     public function unidades(): HasMany
     {
         return $this->hasMany(InventarioUnidad::class, 'cod_traje_base', 'cod_traje');
+    }
+
+    public function valoraciones(): HasMany
+    {
+        return $this->hasMany(Valoracion::class, 'cod_traje_val', 'cod_traje');
     }
 }

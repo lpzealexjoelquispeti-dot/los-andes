@@ -35,6 +35,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/mis-alquileres', [\App\Http\Controllers\AlquilerController::class, 'index'])
+        ->name('cliente.alquileres.index');
+    Route::post('/alquileres', [\App\Http\Controllers\AlquilerController::class, 'store'])
+        ->name('cliente.alquileres.store');
+    Route::patch('/mis-alquileres/{alquiler}/cancelar', [\App\Http\Controllers\AlquilerController::class, 'cancelar'])
+        ->name('cliente.alquileres.cancelar');
+    Route::post('/mis-alquileres/{alquiler}/valorar', [\App\Http\Controllers\AlquilerController::class, 'valorar'])
+        ->name('cliente.alquileres.valorar');
+
+    Route::get('/notificaciones', [\App\Http\Controllers\NotificacionController::class, 'index'])
+        ->name('notificaciones.index');
+    Route::patch('/notificaciones/marcar-todas', [\App\Http\Controllers\NotificacionController::class, 'marcarTodas'])
+        ->name('notificaciones.marcar-todas');
+    Route::patch('/notificaciones/{notificacion}/leida', [\App\Http\Controllers\NotificacionController::class, 'marcarLeida'])
+        ->name('notificaciones.leida');
+    Route::delete('/notificaciones/{notificacion}', [\App\Http\Controllers\NotificacionController::class, 'destroy'])
+        ->name('notificaciones.destroy');
     
 });
 
@@ -204,6 +222,14 @@ Route::middleware(['auth', 'role:Vendedor'])->prefix('vendedor')->name('vendedor
     */
     Route::get('/informes-estadisticos', [\App\Http\Controllers\Vendedor\InformeEstadisticoController::class, 'index'])
         ->name('informes.index');
+
+    Route::get('/alquileres', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'index'])->name('alquileres.index');
+    Route::get('/alquileres/{alquiler}', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'show'])->name('alquileres.show');
+    Route::patch('/alquileres/{alquiler}/entregar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'entregar'])->name('alquileres.entregar');
+    Route::patch('/alquileres/{alquiler}/devolver', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'devolver'])->name('alquileres.devolver');
+    Route::patch('/alquileres/{alquiler}/cancelar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'cancelar'])->name('alquileres.cancelar');
+    Route::post('/alquileres/{alquiler}/sanciones', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'sancionar'])->name('alquileres.sanciones.store');
+    Route::patch('/sanciones/{sancion}/pagar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'pagarSancion'])->name('sanciones.pagar');
     
     // ── GESTIÓN DE INVENTARIO (UNIDADES FÍSICAS DE LOS TRAJES) ──
     Route::get('/trajes/{cod_traje}/unidades/danos', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'danos'])

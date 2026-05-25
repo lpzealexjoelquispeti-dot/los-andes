@@ -204,7 +204,7 @@
 
                 handleVaronFiles(e) {
                     const files = Array.from(e.target.files);
-                    if(this.varonPreviews.length + files.length > 7) return alert('Máximo 7 fotos');
+                    if(this.varonPreviews.length + files.length > 7) return Swal.fire({ icon: 'warning', text: 'Maximo 7 fotos' });
                     files.forEach(f => {
                         this.vt.items.add(f);
                         const r = new FileReader(); r.onload = (ev) => this.varonPreviews.push(ev.target.result); r.readAsDataURL(f);
@@ -219,7 +219,7 @@
 
                 handleMujerFiles(e) {
                     const files = Array.from(e.target.files);
-                    if(this.mujerPreviews.length + files.length > 7) return alert('Máximo 7 fotos');
+                    if(this.mujerPreviews.length + files.length > 7) return Swal.fire({ icon: 'warning', text: 'Maximo 7 fotos' });
                     files.forEach(f => {
                         this.mt.items.add(f);
                         const r = new FileReader(); r.onload = (ev) => this.mujerPreviews.push(ev.target.result); r.readAsDataURL(f);
@@ -234,7 +234,7 @@
 
                 handleUnisexFiles(e) {
                     const files = Array.from(e.target.files);
-                    if(this.unisexPreviews.length + files.length > 7) return alert('Máximo 7 fotos');
+                    if(this.unisexPreviews.length + files.length > 7) return Swal.fire({ icon: 'warning', text: 'Maximo 7 fotos' });
                     files.forEach(f => {
                         this.ut.items.add(f);
                         const r = new FileReader(); r.onload = (ev) => this.unisexPreviews.push(ev.target.result); r.readAsDataURL(f);

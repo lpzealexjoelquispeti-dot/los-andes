@@ -109,14 +109,14 @@
                                         <button type="button" @click="abrirEditar(u)" class="p-1.5 bg-gray-100 hover:bg-blue-50 text-blue-600 rounded-lg transition" title="Editar prenda">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                                         </button>
-                                        <button type="button" @click="if(confirm('¿Dar de BAJA LÓGICA esta prenda?')) { document.getElementById('delete-form-' + u.cod_unidad).submit(); }" class="p-1.5 bg-gray-100 hover:bg-red-50 text-red-500 rounded-lg transition" title="Dar de baja">
+                                        <button type="button" @click="Swal.fire({icon: 'warning', title: 'Dar de baja esta prenda?', showCancelButton: true, confirmButtonText: 'Si, continuar', cancelButtonText: 'Cancelar'}).then((result) => { if (result.isConfirmed) document.getElementById('delete-form-' + u.cod_unidad).submit(); })" class="p-1.5 bg-gray-100 hover:bg-red-50 text-red-500 rounded-lg transition" title="Dar de baja">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
                                     </div>
                                 </template>
 
                                 <template x-if="u.deleted_at">
-                                    <button type="button" @click="if(confirm('¿Reactivar esta prenda?')) { document.getElementById('restore-form-' + u.cod_unidad).submit(); }" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200 hover:border-transparent rounded-lg font-black uppercase text-[9px] tracking-tight transition flex items-center gap-1">
+                                    <button type="button" @click="Swal.fire({icon: 'question', title: 'Reactivar esta prenda?', showCancelButton: true, confirmButtonText: 'Si, continuar', cancelButtonText: 'Cancelar'}).then((result) => { if (result.isConfirmed) document.getElementById('restore-form-' + u.cod_unidad).submit(); })" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white border border-emerald-200 hover:border-transparent rounded-lg font-black uppercase text-[9px] tracking-tight transition flex items-center gap-1">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                         Reactivar
                                     </button>

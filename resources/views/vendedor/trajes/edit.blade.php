@@ -210,7 +210,7 @@
                     const input = document.getElementById('fileInput');
 
                     if (this.totalPhotosCount() + files.length > 7) {
-                        alert('Atención: El catálogo permite un máximo de 7 fotos por variante.');
+                        Swal.fire({ icon: 'warning', text: 'El catalogo permite un maximo de 7 fotos por variante.' });
                         return;
                     }
 
@@ -221,7 +221,7 @@
                             reader.onload = (e) => this.previews.push(e.target.result);
                             reader.readAsDataURL(file);
                         } else {
-                            alert('El archivo "' + file.name + '" no es un formato .JPG válido.');
+                            Swal.fire({ icon: 'warning', text: 'El archivo "' + file.name + '" no es un formato .JPG valido.' });
                         }
                     });
                     input.files = this.dataTransfer.files;

@@ -76,7 +76,7 @@
                                             </button>
                                         </form>
 
-                                        <form action="{{ route('admin.tiendas.rechazar', $tienda->cod_tienda) }}" method="POST" onsubmit="return confirm('¿Estás seguro de rechazar esta tienda? Se eliminará el registro.')">
+                                        <form action="{{ route('admin.tiendas.rechazar', $tienda->cod_tienda) }}" method="POST" data-confirm="Rechazar esta tienda? Se eliminara el registro.">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="bg-andes-rojo text-white p-2 rounded-lg hover:bg-red-700 shadow-md transition transform hover:scale-110" title="Rechazar">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>

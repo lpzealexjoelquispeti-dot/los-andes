@@ -74,5 +74,20 @@
         </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const success = @json(session('success'));
+            const errorBag = @json($errors->any() ? $errors->first() : null);
+
+            if (success) {
+                Swal.fire({ icon: 'success', title: 'Listo', text: success, timer: 2400, showConfirmButton: false });
+            }
+
+            if (errorBag) {
+                Swal.fire({ icon: 'error', title: 'Revisa los datos', text: errorBag });
+            }
+        });
+    </script>
 </body>
 </html>
