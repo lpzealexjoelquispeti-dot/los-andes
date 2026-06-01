@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Vendedor;
-
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Alquiler;
 use App\Models\Notificacion;
@@ -183,4 +183,51 @@ class AlquilerController extends Controller
             'disponibilidad' => in_array($unidad->estado_fisico, ['Nuevo', 'Buen Estado'], true),
         ]);
     }
+    public function aprobar(Alquiler $alquiler)
+    {
+        abort_unless($alquiler->unidadFisica->traje->tienda->cod_usuario_tie === auth()->id(), 403);
+        abort_if($alquiler->est_alquiler !== 'Pendiente_Aprobacion', 422);
+
+        DB::transaction(function () use ($alquiler) {
+            $alquiler->update(['est_alquiler' => 'Reservado']);
+            $alquiler->unidadFisica->update(['disponibilidad' => false]);
+
+            Notificacion::create([
+                'cod_usuario_not' => $alquiler->cod_usuario_cli,
+                'titulo'  => '¡Alquiler confirmado!',
+                'mensaje' => 'El vendedor aprobó tu solicitud de ' . $alquiler->unidadFisica->traje->nom_traje . '.',
+                'tipo'    => 'exito',
+            ]);
+        });
+
+        return back()->with('success', 'Alquiler aprobado y unidad bloqueada.');
+    }
+
+    public function rechazar(Request $request, Alquiler $alquiler)
+    {
+        abort_unless($alquiler->unidadFisica->traje->tienda->cod_usuario_tie === auth()->id(), 403);
+        abort_if($alquiler->est_alquiler !== 'Pendiente_Aprobacion', 422);
+
+        $data = $request->validate([
+            'motivo_rechazo' => ['required', 'string', 'max:500'],
+        ]);
+
+        $alquiler->update([
+            'est_alquiler'   => 'Cancelado',
+            'motivo_rechazo' => $data['motivo_rechazo'],
+        ]);
+
+        Notificacion::create([
+            'cod_usuario_not' => $alquiler->cod_usuario_cli,
+            'titulo'  => 'Solicitud no aprobada',
+            'mensaje' => 'Tu solicitud de alquiler #' . $alquiler->cod_alquiler . ' fue rechazada. Motivo: ' . $data['motivo_rechazo'],
+            'tipo'    => 'alerta',
+        ]);
+
+        return back()->with('success', 'Solicitud rechazada.');
+    }
+    /**
+     * Aplicar una sanción o registrar daños sobre el alquiler
+     */
+    
 }

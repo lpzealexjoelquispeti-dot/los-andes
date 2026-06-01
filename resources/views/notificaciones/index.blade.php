@@ -23,7 +23,19 @@
                                 <span class="w-2 h-2 rounded-full {{ $notificacion->tipo === 'alerta' ? 'bg-red-500' : ($notificacion->tipo === 'exito' ? 'bg-emerald-500' : 'bg-blue-500') }}"></span>
                                 <h4 class="font-black text-gray-900">{{ $notificacion->titulo }}</h4>
                             </div>
-                            <p class="text-sm text-gray-600 mt-1">{{ $notificacion->mensaje }}</p>
+                            <p class="text-sm text-gray-600 mt-1">
+    @if(str_contains($notificacion->mensaje, 'Motivo:'))
+        {{-- Separa el texto informativo del motivo real --}}
+        <span>{{ Str::before($notificacion->mensaje, 'Motivo:') }}</span>
+        
+        <blockquote class="mt-2 p-3 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-xs font-medium text-red-700">
+            <span class="font-black uppercase tracking-wider block text-[10px] text-red-500 mb-0.5">Motivo del rechazo:</span>
+            "{{ Str::after($notificacion->mensaje, 'Motivo:') }}"
+        </blockquote>
+    @else
+        {{ $notificacion->mensaje }}
+    @endif
+</p>
                             <p class="text-xs text-gray-400 mt-2">{{ $notificacion->created_at->diffForHumans() }}</p>
                         </div>
                         <div class="flex gap-2">

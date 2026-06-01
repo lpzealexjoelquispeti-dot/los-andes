@@ -175,6 +175,81 @@
                         </a>
                     </div>
                 </div>
+                {{-- Alquileres con dropdown y badge de pendientes --}}
+<div x-data="{ openAlquileres: false }">
+    <button @click="openAlquileres = !openAlquileres" 
+            class="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
+        <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-andes-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l2 2 4-4M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z"/>
+            </svg>
+            <span>Alquileres</span>
+        </div>
+        <div class="flex items-center gap-2">
+            @php
+                $pendientesCount = \App\Models\Alquiler::whereHas('unidadFisica.traje.tienda', fn($q) => 
+                    $q->where('cod_usuario_tie', auth()->id())
+                )->where('est_alquiler', 'Pendiente_Aprobacion')->count();
+            @endphp
+            @if($pendientesCount > 0)
+                <span class="bg-andes-rojo text-white text-[9px] font-black px-2 py-0.5 rounded-full min-w-[1.2rem] text-center">
+                    {{ $pendientesCount }}
+                </span>
+            @endif
+            <svg :class="openAlquileres ? 'rotate-180' : ''" 
+                 class="w-4 h-4 transition-transform duration-300" 
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </div>
+    </button>
+
+    <div x-show="openAlquileres" x-cloak x-transition class="mt-1 ml-4 space-y-1">
+        
+        {{-- Pendientes de aprobación --}}
+        <a href="{{ route('vendedor.alquileres.index', ['estado' => 'Pendiente_Aprobacion']) }}" 
+           class="flex items-center justify-between gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+                Por aprobar
+            </div>
+            @if($pendientesCount > 0)
+                <span class="bg-yellow-400/20 text-yellow-300 text-[9px] font-black px-2 py-0.5 rounded-full">
+                    {{ $pendientesCount }}
+                </span>
+            @endif
+        </a>
+
+        {{-- Reservados (aprobados, esperando entrega) --}}
+        <a href="{{ route('vendedor.alquileres.index', ['estado' => 'Reservado']) }}" 
+           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+            <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+            Reservados
+        </a>
+
+        {{-- Entregados --}}
+        <a href="{{ route('vendedor.alquileres.index', ['estado' => 'Entregado']) }}" 
+           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+            <div class="w-2 h-2 rounded-full bg-andes-verde"></div>
+            Entregados
+        </a>
+
+        {{-- En mora --}}
+        <a href="{{ route('vendedor.alquileres.index', ['estado' => 'En Mora']) }}" 
+           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+            <div class="w-2 h-2 rounded-full bg-andes-rojo"></div>
+            En mora
+        </a>
+
+        {{-- Todos --}}
+        <a href="{{ route('vendedor.alquileres.index') }}" 
+           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+            <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+            Ver todos
+        </a>
+
+    </div>
+</div>
             @endrole
 
             @role('Cliente')

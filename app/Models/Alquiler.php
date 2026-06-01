@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\SancionAlquiler; // ◄— AGREGA ESTA LÍNEA SI NO ESTÁ
+use App\Models\Notificacion;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -22,6 +24,7 @@ class Alquiler extends Model
         'monto_total',
         'garantia',
         'est_alquiler',
+        'comprobante_pago_path',
     ];
 
     protected $casts = [
@@ -51,9 +54,9 @@ class Alquiler extends Model
     {
         return $this->belongsTo(EventoFolclorico::class, 'cod_evento_alq', 'cod_evento');
     }
-
-    public function sanciones()
-    {
-        return $this->hasMany(SancionAlquiler::class, 'cod_alquiler_ref', 'cod_alquiler');
-    }
+public function sanciones()
+{
+    // Sincronizado con tu modelo SancionAlquiler y su clave foránea real
+    return $this->hasMany(SancionAlquiler::class, 'cod_alquiler_ref', 'cod_alquiler');
+}
 }

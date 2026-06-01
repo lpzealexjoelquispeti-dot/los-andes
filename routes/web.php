@@ -53,6 +53,8 @@ Route::middleware('auth')->group(function () {
         ->name('notificaciones.leida');
     Route::delete('/notificaciones/{notificacion}', [\App\Http\Controllers\NotificacionController::class, 'destroy'])
         ->name('notificaciones.destroy');
+    Route::get('/reservar/{unidad}', [App\Http\Controllers\Public\TrajeController::class, 'reservar'])
+    ->name('public.reservar');
     
 });
 
@@ -273,6 +275,11 @@ Route::middleware(['auth', 'role:Vendedor'])->prefix('vendedor')->name('vendedor
  
     Route::post('/unidades/{id}/restore', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'restore'])
         ->name('unidades.restore');
+    Route::patch('/alquileres/{alquiler}/aprobar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'aprobar'])
+    ->name('alquileres.aprobar');
+
+Route::patch('/alquileres/{alquiler}/rechazar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'rechazar'])
+    ->name('alquileres.rechazar');
 });
 
 

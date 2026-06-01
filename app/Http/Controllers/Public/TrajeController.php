@@ -134,4 +134,13 @@ class TrajeController extends Controller
 
         return redirect()->route('public.catalogo.index', ['q' => $traje->nom_traje]);
     }
+    public function reservar(\App\Models\InventarioUnidad $unidad)
+{
+    // Verificar que la unidad sigue disponible
+    abort_if(! $unidad->disponibilidad, 404, 'Esta unidad ya no está disponible.');
+    
+    $unidad->load(['traje.tienda.diseno', 'traje.imagenes', 'traje.danza']);
+    
+    return view('public.catalogo.reservar', compact('unidad'));
+}
 }

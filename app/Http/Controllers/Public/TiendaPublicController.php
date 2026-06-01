@@ -92,4 +92,5 @@ class TiendaPublicController extends Controller
             'populares'
         ));
     }
+    
 }
