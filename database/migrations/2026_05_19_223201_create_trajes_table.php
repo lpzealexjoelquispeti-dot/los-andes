@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id('cod_traje');
             
             // Es estrictamente nullable() y se ubica estratégicamente al inicio
-            $table->unsignedBigInteger('cod_traje_padre')->nullable()->after('cod_traje');
+            $table->unsignedBigInteger('cod_traje_padre')->nullable();
             
             $table->string('nom_traje');
             $table->text('des_traje');
