@@ -97,7 +97,11 @@ class AlquilerController extends Controller
         abort_if(! in_array($alquiler->est_alquiler, ['Reservado'], true), 422);
 
         $alquiler->update(['est_alquiler' => 'Cancelado']);
-        $alquiler->unidadFisica?->update(['disponibilidad' => true]);
+
+        $unidad = $alquiler->unidadFisica;
+        $unidad?->update([
+            'disponibilidad' => in_array($unidad->estado_fisico, ['Nuevo', 'Buen Estado'], true),
+        ]);
 
         Notificacion::create([
             'cod_usuario_not' => auth()->id(),

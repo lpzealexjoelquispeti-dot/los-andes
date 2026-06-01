@@ -121,7 +121,7 @@ class AlquilerController extends Controller
 
         if (! $alquiler->sanciones()->where('pagada', false)->exists()) {
             $alquiler->update(['est_alquiler' => 'Devuelto']);
-            $alquiler->unidadFisica?->update(['disponibilidad' => true]);
+            $this->actualizarDisponibilidadUnidad($alquiler);
         }
 
         Notificacion::create([
@@ -140,7 +140,7 @@ class AlquilerController extends Controller
         abort_unless(in_array($alquiler->est_alquiler, ['Reservado', 'Entregado', 'En Mora'], true), 422);
 
         $alquiler->update(['est_alquiler' => 'Cancelado']);
-        $alquiler->unidadFisica?->update(['disponibilidad' => true]);
+        $this->actualizarDisponibilidadUnidad($alquiler);
 
         Notificacion::create([
             'cod_usuario_not' => $alquiler->cod_usuario_cli,
@@ -169,5 +169,18 @@ class AlquilerController extends Controller
             ->exists();
 
         abort_unless($pertenece, 403);
+    }
+
+    private function actualizarDisponibilidadUnidad(Alquiler $alquiler): void
+    {
+        $unidad = $alquiler->unidadFisica;
+
+        if (! $unidad) {
+            return;
+        }
+
+        $unidad->update([
+            'disponibilidad' => in_array($unidad->estado_fisico, ['Nuevo', 'Buen Estado'], true),
+        ]);
     }
 }
