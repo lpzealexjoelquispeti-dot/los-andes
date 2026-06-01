@@ -64,12 +64,13 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {{-- SECCIÓN CENTRAL DE REPORTES GRÁFICOS --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             
             {{-- TABLA: TOP REPETICIÓN DE STOCK (MAYOR VOLUMEN INVENTARIO) --}}
             <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
                 <h3 class="text-lg font-black uppercase tracking-tight text-gray-800 mb-6">
-                    🚀 Enfoque de Producción (Mayor Stock Físico)
+                    🚀 Enfoque de Production (Mayor Stock Físico)
                 </h3>
                 <div class="flow-root">
                     <ul class="-my-5 divide-y divide-gray-100">
@@ -119,7 +120,126 @@
                     💡 Consejo: Si "Mantenimiento" supera el 15%, urge acelerar las reparaciones con el sastre.
                 </div>
             </div>
-
         </div>
+
+        {{-- ── NUEVA SECCIÓN: BUSCADOR PARAMETRIZADO E INVENTARIO DETALLADO ── --}}
+        <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm mb-12">
+            <div class="mb-6">
+                <h3 class="text-lg font-black uppercase tracking-tight text-gray-800">
+                    🔍 Buscador Parametrizado de Inventario
+                </h3>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">
+                    Filtra y audita el perchero en tiempo real
+                </p>
+            </div>
+
+            {{-- FORMULARIO DE FILTROS --}}
+            <form method="GET" action="{{ url()->current() }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-gray-50 p-5 rounded-3xl">
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-2">Nombre del Traje</label>
+                    <input type="text" name="búsqueda" value="{{ request('búsqueda') }}" placeholder="Ej: Rey Moreno..." 
+                           class="w-full rounded-xl border-gray-200 text-sm focus:border-gray-400 focus:ring-0 placeholder-gray-300 font-medium">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-2">Filtrar por Danza</label>
+                    <select name="danza" class="w-full rounded-xl border-gray-200 text-sm focus:border-gray-400 focus:ring-0 font-medium text-gray-700">
+                        <option value="">-- Todas las Danzas --</option>
+                        @foreach($danzasDisponibles ?? [] as $danza)
+                            <option value="{{ $danza->cod_danza }}" {{ request('danza') == $danza->cod_danza ? 'selected' : '' }}>
+                                {{ $danza->nom_danza }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-2">Estado Físico</label>
+                    <select name="estado" class="w-full rounded-xl border-gray-200 text-sm focus:border-gray-400 focus:ring-0 font-medium text-gray-700">
+                        <option value="">-- Todos los Estados --</option>
+                        <option value="Disponible" {{ request('estado') === 'Disponible' ? 'selected' : '' }}>Disponible</option>
+                        <option value="Mantenimiento" {{ request('estado') === 'Mantenimiento' ? 'selected' : '' }}>Mantenimiento</option>
+                        <option value="Reservado" {{ request('estado') === 'Reservado' ? 'selected' : '' }}>Reservado</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="w-full text-white text-xs font-black uppercase tracking-wider py-3 px-4 rounded-xl shadow transition duration-150 hover:opacity-90"
+                            style="background-color: {{ $colorTienda }}">
+                        Filtrar Perchero
+                    </button>
+                    @if(request()->hasAny(['búsqueda', 'danza', 'estado']))
+                        <a href="{{ url()->current() }}" class="bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs font-black uppercase tracking-wider py-3 px-4 rounded-xl transition duration-150 text-center">
+                            Limpiar
+                        </a>
+                    @endif
+                </div>
+            </form>
+
+            {{-- REPOSITORIO DE RESULTADOS --}}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-100 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                            <th class="pb-3 pl-2">Código Barra / ID</th>
+                            <th class="pb-3">Prenda Coreográfica</th>
+                            <th class="pb-3">Talla</th>
+                            <th class="pb-3">Estado Operativo</th>
+                            <th class="pb-3 text-right pr-2">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 text-sm font-medium text-gray-700">
+                        @forelse($unidadesFiltradas ?? [] as $unidad)
+                            <tr class="hover:bg-gray-50/50 transition">
+                                <td class="py-4 pl-2 font-mono text-xs text-gray-400">
+                                    #{{ $unidad->cod_un_traje ?? $unidad->id }}
+                                </td>
+                                <td class="py-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-gray-900">{{ $unidad->traje->nom_traje }}</span>
+                                        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-tight">
+                                            {{ $unidad->traje->danza->nom_danza ?? 'Folklore General' }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="py-4">
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-black rounded-md uppercase">
+                                        {{ $unidad->talla ?? 'U' }}
+                                    </span>
+                                </td>
+                                <td class="py-4">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-tight
+                                        {{ $unidad->estado_unidad === 'Disponible' ? 'bg-green-50 text-green-700' : ($unidad->estado_unidad === 'Mantenimiento' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-600') }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $unidad->estado_unidad === 'Disponible' ? 'bg-green-600' : ($unidad->estado_unidad === 'Mantenimiento' ? 'bg-red-600' : 'bg-gray-500') }}"></span>
+                                        {{ $unidad->estado_unidad }}
+                                    </span>
+                                </td>
+                                <td class="py-4 text-right pr-2">
+                                    <a href="{{ route('vendedor.unidades.edit', $unidad->cod_un_traje ?? $unidad->id) }}" 
+                                       class="text-xs font-black uppercase tracking-wider hover:underline"
+                                       style="color: {{ $colorTienda }}">
+                                        Gestionar
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-gray-400 font-bold uppercase text-xs tracking-wider">
+                                    ❌ No se encontraron unidades físicas en el perchero con los filtros aplicados.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- PAGINACIÓN --}}
+            @if(isset($unidadesFiltradas) && method_exists($unidadesFiltradas, 'links'))
+                <div class="mt-6 border-t pt-4">
+                    {{ $unidadesFiltradas->appends(request()->query())->links() }}
+                </div>
+            @endif
+        </div>
+
     </div>
 </x-app-layout>

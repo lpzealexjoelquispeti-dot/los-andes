@@ -93,6 +93,7 @@ Route::middleware(['auth', 'role:SuperAdmin'])
     Route::get('/danzas/crear', [\App\Http\Controllers\Admin\DanzaController::class, 'create'])
         ->name('danzas.create');
 
+    // Corrección semántica a POST para almacenamiento estándar
     Route::post('/danzas', [\App\Http\Controllers\Admin\DanzaController::class, 'store'])
         ->name('danzas.store');
 
@@ -139,7 +140,7 @@ Route::middleware(['auth', 'role:SuperAdmin'])
 
     /*
     |--------------------------------------------------------------------------
-    | REPORTES
+    | REPORTES CENTRALES
     |--------------------------------------------------------------------------
     */
     Route::get('/reportes/tesauro', [\App\Http\Controllers\Admin\Reportes\TesauroReporteController::class, 'index'])->name('reportes.tesauro');
@@ -190,6 +191,8 @@ Route::middleware(['auth', 'role:Vendedor'])->prefix('vendedor')->name('vendedor
     Route::post('/mi-tienda', [\App\Http\Controllers\TiendaController::class, 'store'])->name('tienda.store');
     Route::get('/mi-tienda/{id}/editar', [\App\Http\Controllers\TiendaController::class, 'edit'])->name('tienda.edit');
     Route::put('/mi-tienda/{id}', [\App\Http\Controllers\TiendaController::class, 'update'])->name('tienda.update');
+    
+    // Ruta restore colocada estratégicamente sobre el resource
     Route::post('/trajes/{id}/restore', [App\Http\Controllers\Vendedor\TrajeController::class, 'restore'])->name('trajes.restore');
 
     // Resource de Trajes
@@ -199,11 +202,15 @@ Route::middleware(['auth', 'role:Vendedor'])->prefix('vendedor')->name('vendedor
     
     /*
     |--------------------------------------------------------------------------
-    | INFORMES ESTADÍSTICOS (AÑADIDO)
+    | INFORMES Y REPORTES PARAMETRIZADOS (Corrección Unificada)
     |--------------------------------------------------------------------------
     */
+    // Ambas acciones (ver estadísticas generales y filtrar el perchero) apuntan al mismo index compartiendo la vista
     Route::get('/informes-estadisticos', [\App\Http\Controllers\Vendedor\InformeEstadisticoController::class, 'index'])
         ->name('informes.index');
+        
+    Route::get('/reportes', [\App\Http\Controllers\Vendedor\InformeEstadisticoController::class, 'index'])
+        ->name('reportes.index');
     
     // ── GESTIÓN DE INVENTARIO (UNIDADES FÍSICAS DE LOS TRAJES) ──
     Route::get('/trajes/{cod_traje}/unidades/danos', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'danos'])

@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Vendedor;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request; // Sirve para leer los filtros que elija el usuario
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Vendedor\Traje;
-use App\Models\Vendedor\TrajeUnidad; // Tu 'inventario_unidades'
+use App\Models\Vendedor\TrajeUnidad; 
 
 class InformeEstadisticoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // 1. Obtener la tienda del vendedor actual
         $tienda = Auth::user()->tienda; 
@@ -20,15 +21,13 @@ class InformeEstadisticoController extends Controller
         }
 
         // --- INFORME 1: ROTACIÓN Y POPULARIDAD ---
-        // Trajes más solicitados cruzando con los registros de alquileres
         $trajesPopulares = Traje::where('cod_tienda_id', $tienda->id)
-            ->withCount('unidades') // Cantidad de piezas físicas totales que tiene
+            ->withCount('unidades') 
             ->orderBy('unidades_count', 'desc')
             ->take(5)
             ->get();
 
         // --- INFORME 2: ESTADO FÍSICO DEL INVENTARIO ---
-        // Contamos cuántas unidades están en cada estado dentro de su perchero
         $estadoInventario = DB::table('inventario_unidades')
             ->join('trajes', 'inventario_unidades.cod_traje_id', '=', 'trajes.id')
             ->where('trajes.cod_tienda_id', $tienda->id)
@@ -37,7 +36,6 @@ class InformeEstadisticoController extends Controller
             ->get();
 
         // --- INFORME 3: BALANCE DE GÉNERO Y VARIANTES ---
-        // Ver cuántos trajes maestros tienen su variante de pareja registrada
         $totalTrajesMaestros = Traje::where('cod_tienda_id', $tienda->id)
             ->whereNull('cod_traje_padre')
             ->count();
@@ -47,16 +45,40 @@ class InformeEstadisticoController extends Controller
             ->whereHas('varianteFemenina')
             ->count();
 
-        // Extraer colores corporativos guardados en su Diseño Tienda para la UI
+        // Extraer color corporativo
         $colorTienda = $tienda->diseno->color_primario ?? '#16a34a';
 
+        // ════ BUSCADOR PARAMETRIZADO DEL PERCHERO ════
+        // Trajes para llenar el select del formulario
+        $trajes = Traje::where('cod_tienda_id', $tienda->id)->get();
+
+        // Consulta base sobre las unidades físicas de esta tienda
+        $query = TrajeUnidad::whereHas('traje', function($q) use ($tienda) {
+            $q->where('cod_tienda_id', $tienda->id);
+        });
+
+        // Si el usuario filtra por un traje específico
+        if ($request->filled('cod_traje')) {
+            $query->where('cod_traje_id', $request->cod_traje);
+        }
+
+        // Si el usuario filtra por un estado (Disponible, Alquilado, etc)
+        if ($request->filled('estado')) {
+            $query->where('estado_unidad', $request->estado);
+        }
+
+        $unidades = $query->with('traje')->get();
+
+        // Enviamos TODO a la misma vista index
         return view('vendedor.informes.index', compact(
             'tienda', 
             'trajesPopulares', 
             'estadoInventario', 
             'totalTrajesMaestros', 
             'trajesConVariante',
-            'colorTienda'
+            'colorTienda',
+            'trajes',
+            'unidades'
         ));
     }
 }
