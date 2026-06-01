@@ -2,12 +2,7 @@
 @section('header', 'Gestión de Alquileres')
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
-    .v-font  { font-family: 'DM Sans', sans-serif; }
-    .v-title { font-family: 'Syne', sans-serif; }
-
     .estado-tab {
-        font-family: 'DM Sans', sans-serif;
         font-size: .65rem;
         font-weight: 800;
         letter-spacing: .12em;
@@ -44,35 +39,33 @@
     .badge-cancelado  { background: #f3f4f6; color: #9ca3af; }
 
     .btn-aprobar {
-        background: #16a34a; color: #fff;
+        background: #007A33; color: #fff;
         font-weight: 800; font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
         padding: .55rem 1.2rem; border-radius: 12px; border: none; cursor: pointer;
-        font-family: 'DM Sans', sans-serif;
         transition: opacity .2s, transform .15s;
     }
     .btn-aprobar:hover { opacity: .88; transform: translateY(-1px); }
 
     .btn-rechazar {
-        background: #fff; color: #dc2626;
+        background: #fff; color: #DA291C;
         font-weight: 800; font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
         padding: .55rem 1.2rem; border-radius: 12px;
         border: 2px solid #fca5a5; cursor: pointer;
-        font-family: 'DM Sans', sans-serif;
         transition: all .2s;
     }
-    .btn-rechazar:hover { background: #fee2e2; border-color: #dc2626; }
+    .btn-rechazar:hover { background: #fee2e2; border-color: #DA291C; }
 
     .fade-in { animation: fadeIn .35s ease both; }
     @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
 </style>
 
-<div class="v-font max-w-6xl mx-auto px-4 py-10">
+<div class="max-w-6xl mx-auto px-4 py-8">
 
     {{-- ── CABECERA ── --}}
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
         <div>
             <p class="text-[10px] font-black uppercase tracking-[.2em] text-gray-400 mb-1">Panel vendedor</p>
-            <h1 class="v-title text-3xl text-gray-900">Alquileres</h1>
+            <h1 class="text-2xl font-black text-andes-oscuro uppercase tracking-tight">Alquileres</h1>
         </div>
 
         {{-- Contador rápido --}}
@@ -100,12 +93,12 @@
     <div class="flex gap-2 overflow-x-auto pb-2 mb-8 hide-scrollbar">
         @php
             $estados = [
-                ''                    => ['label' => 'Todos',        'color' => '#374151'],
-                'Pendiente_Aprobacion'=> ['label' => 'Por aprobar',  'color' => '#92400e'],
+                ''                    => ['label' => 'Todos',        'color' => '#1A1A1A'],
+                'Pendiente_Aprobacion'=> ['label' => 'Por aprobar',  'color' => '#DA291C'],
                 'Reservado'           => ['label' => 'Reservados',   'color' => '#1e40af'],
-                'Entregado'           => ['label' => 'Entregados',   'color' => '#166534'],
+                'Entregado'           => ['label' => 'Entregados',   'color' => '#007A33'],
                 'Devuelto'            => ['label' => 'Devueltos',    'color' => '#374151'],
-                'En Mora'             => ['label' => 'En mora',      'color' => '#991b1b'],
+                'En Mora'             => ['label' => 'En mora',      'color' => '#DA291C'],
                 'Cancelado'           => ['label' => 'Cancelados',   'color' => '#6b7280'],
             ];
             $estadoActual = request('estado', '');
@@ -183,7 +176,7 @@
                         <span class="text-[9px] font-black uppercase tracking-widest text-gray-400">#{{ $alquiler->cod_alquiler }}</span>
                     </div>
 
-                    <h3 class="v-title text-base text-gray-900 leading-tight mb-1">
+                    <h3 class="text-base font-black text-andes-oscuro uppercase leading-tight mb-1">
                         {{ $traje->nom_traje }}
                     </h3>
 
@@ -202,8 +195,8 @@
                 <div class="flex flex-col items-end justify-between gap-3 flex-shrink-0">
                     <div class="text-right">
                         <p class="text-[9px] font-black uppercase tracking-wider text-gray-400">Total</p>
-                        <p class="text-lg font-black text-gray-900">Bs. {{ number_format($alquiler->monto_total, 0) }}</p>
-                        <p class="text-[10px] font-semibold text-green-600">Seña: Bs. {{ number_format($alquiler->monto_sena, 0) }}</p>
+                        <p class="text-lg font-black text-andes-oscuro">Bs. {{ number_format($alquiler->monto_total, 0) }}</p>
+                        <p class="text-[10px] font-semibold text-andes-verde">Seña: Bs. {{ number_format($alquiler->monto_sena, 0) }}</p>
                     </div>
 
                     <div class="flex gap-2">
@@ -226,14 +219,14 @@
                         @if($alquiler->est_alquiler === 'Reservado')
                             <form method="POST" action="{{ route('vendedor.alquileres.entregar', $alquiler->cod_alquiler) }}">
                                 @csrf @method('PATCH')
-                                <button type="submit" class="btn-aprobar" style="background:#2563eb">📦 Entregar</button>
+                                <button type="submit" class="btn-aprobar" style="background:#1A1A1A">📦 Entregar</button>
                             </form>
                         @endif
 
                         {{-- Devolver si está entregado --}}
                         @if($alquiler->est_alquiler === 'Entregado')
                             <a href="{{ route('vendedor.alquileres.show', $alquiler->cod_alquiler) }}"
-                               class="btn-aprobar" style="background:#7c3aed; display:inline-block">↩ Devolver</a>
+                               class="btn-aprobar" style="background:#DA291C; display:inline-block">↩ Devolver</a>
                         @endif
                     </div>
                 </div>
@@ -259,7 +252,7 @@
             <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-width="1" d="M9 14l2 2 4-4M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z"/>
             </svg>
-            <p class="v-title text-lg text-gray-400">Sin alquileres en este estado</p>
+            <p class="text-lg font-black text-gray-400 uppercase tracking-tight">Sin alquileres en este estado</p>
             <p class="text-[11px] text-gray-400 font-medium mt-1 uppercase tracking-wider">Cambia el filtro para ver otros registros</p>
         </div>
     @endforelse
