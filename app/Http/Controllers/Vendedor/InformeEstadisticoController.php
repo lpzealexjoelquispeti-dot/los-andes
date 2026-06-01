@@ -3,82 +3,113 @@
 namespace App\Http\Controllers\Vendedor;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request; // Sirve para leer los filtros que elija el usuario
+use App\Models\Danza;
+use App\Models\InventarioUnidad;
+use App\Models\Traje;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Models\Vendedor\Traje;
-use App\Models\Vendedor\TrajeUnidad; 
 
 class InformeEstadisticoController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Obtener la tienda del vendedor actual
-        $tienda = Auth::user()->tienda; 
-        
-        if (!$tienda) {
-            return redirect()->back()->with('error', 'No tienes una tienda asignada.');
+        $tienda = Auth::user()->tiendas()->first();
+
+        if (! $tienda || ! $tienda->est_tie) {
+            return redirect()
+                ->route('vendedor.dashboard')
+                ->with('error', 'Necesitas una tienda aprobada para ver los reportes.');
         }
 
-        // --- INFORME 1: ROTACIÓN Y POPULARIDAD ---
-        $trajesPopulares = Traje::where('cod_tienda_id', $tienda->id)
-            ->withCount('unidades') 
+        $trajesTienda = Traje::where('cod_tienda_traje', $tienda->cod_tienda);
+
+        $trajesPopulares = (clone $trajesTienda)
+            ->withCount('unidades')
             ->orderBy('unidades_count', 'desc')
             ->take(5)
             ->get();
 
-        // --- INFORME 2: ESTADO FÍSICO DEL INVENTARIO ---
         $estadoInventario = DB::table('inventario_unidades')
-            ->join('trajes', 'inventario_unidades.cod_traje_id', '=', 'trajes.id')
-            ->where('trajes.cod_tienda_id', $tienda->id)
-            ->select('inventario_unidades.estado_unidad', DB::raw('count(*) as total'))
-            ->groupBy('inventario_unidades.estado_unidad')
+            ->join('trajes', 'inventario_unidades.cod_traje_base', '=', 'trajes.cod_traje')
+            ->where('trajes.cod_tienda_traje', $tienda->cod_tienda)
+            ->whereNull('inventario_unidades.deleted_at')
+            ->select('inventario_unidades.estado_fisico as estado_unidad', DB::raw('count(*) as total'))
+            ->groupBy('inventario_unidades.estado_fisico')
             ->get();
 
-        // --- INFORME 3: BALANCE DE GÉNERO Y VARIANTES ---
-        $totalTrajesMaestros = Traje::where('cod_tienda_id', $tienda->id)
+        $totalTrajesMaestros = (clone $trajesTienda)
             ->whereNull('cod_traje_padre')
             ->count();
 
-        $trajesConVariante = Traje::where('cod_tienda_id', $tienda->id)
+        $trajesConVariante = (clone $trajesTienda)
             ->whereNull('cod_traje_padre')
             ->whereHas('varianteFemenina')
             ->count();
 
-        // Extraer color corporativo
         $colorTienda = $tienda->diseno->color_primario ?? '#16a34a';
 
-        // ════ BUSCADOR PARAMETRIZADO DEL PERCHERO ════
-        // Trajes para llenar el select del formulario
-        $trajes = Traje::where('cod_tienda_id', $tienda->id)->get();
+        $unidadesDisponibles = DB::table('inventario_unidades')
+            ->join('trajes', 'inventario_unidades.cod_traje_base', '=', 'trajes.cod_traje')
+            ->where('trajes.cod_tienda_traje', $tienda->cod_tienda)
+            ->whereNull('inventario_unidades.deleted_at')
+            ->where('inventario_unidades.disponibilidad', true)
+            ->count();
 
-        // Consulta base sobre las unidades físicas de esta tienda
-        $query = TrajeUnidad::whereHas('traje', function($q) use ($tienda) {
-            $q->where('cod_tienda_id', $tienda->id);
-        });
+        $trajes = (clone $trajesTienda)
+            ->orderBy('nom_traje')
+            ->get();
 
-        // Si el usuario filtra por un traje específico
+        $danzasDisponibles = Danza::whereIn(
+            'cod_danza',
+            (clone $trajesTienda)->pluck('cod_danza_traje')->filter()->unique()
+        )
+            ->orderBy('nom_danza')
+            ->get();
+
+        $unidadesQuery = InventarioUnidad::with(['traje.danza'])
+            ->whereHas('traje', function ($query) use ($tienda) {
+                $query->where('cod_tienda_traje', $tienda->cod_tienda);
+            });
+
         if ($request->filled('cod_traje')) {
-            $query->where('cod_traje_id', $request->cod_traje);
+            $unidadesQuery->where('cod_traje_base', $request->cod_traje);
         }
 
-        // Si el usuario filtra por un estado (Disponible, Alquilado, etc)
+        $busqueda = $request->input('busqueda', $request->input('busqueda_original'));
+
+        if ($busqueda) {
+            $unidadesQuery->whereHas('traje', function ($query) use ($busqueda) {
+                $query->where('nom_traje', 'like', "%{$busqueda}%");
+            });
+        }
+
+        if ($request->filled('danza')) {
+            $unidadesQuery->whereHas('traje', function ($query) use ($request) {
+                $query->where('cod_danza_traje', $request->danza);
+            });
+        }
+
         if ($request->filled('estado')) {
-            $query->where('estado_unidad', $request->estado);
+            $unidadesQuery->where('estado_fisico', $request->estado);
         }
 
-        $unidades = $query->with('traje')->get();
+        $unidadesFiltradas = $unidadesQuery
+            ->orderBy('cod_unidad')
+            ->paginate(15)
+            ->withQueryString();
 
-        // Enviamos TODO a la misma vista index
         return view('vendedor.informes.index', compact(
-            'tienda', 
-            'trajesPopulares', 
-            'estadoInventario', 
-            'totalTrajesMaestros', 
+            'tienda',
+            'trajesPopulares',
+            'estadoInventario',
+            'totalTrajesMaestros',
             'trajesConVariante',
             'colorTienda',
+            'unidadesDisponibles',
             'trajes',
-            'unidades'
+            'danzasDisponibles',
+            'unidadesFiltradas'
         ));
     }
 }

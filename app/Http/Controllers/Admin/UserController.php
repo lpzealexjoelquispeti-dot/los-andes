@@ -141,6 +141,19 @@ class UserController extends Controller
     return redirect()->back()->with('status', 'clave-regenerada');
 }
 
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+
+        if (auth()->id() === $user->id) {
+            return redirect()->back()->with('error', 'No puedes dar de baja tu propia cuenta.');
+        }
+
+        $user->delete();
+
+        return redirect()->route('admin.users.index')->with('status', 'usuario-dado-de-baja');
+    }
+
     public function restore($id)
     {
         $user = User::onlyTrashed()->findOrFail($id);

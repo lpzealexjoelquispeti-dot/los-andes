@@ -60,7 +60,6 @@
                             <x-text-input id="password" 
                                         class="block w-full border-gray-300 focus:border-andes-rojo focus:ring-andes-rojo rounded-lg shadow-sm bg-gray-50 pr-10" 
                                         x-bind:type="show ? 'text' : 'password'" 
-                                        :value="Illuminate\Support\Facades\Cookie::get('user_password')"
                                         name="password" required autocomplete="current-password" placeholder="••••••••" />
                             
                             <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-andes-rojo focus:outline-none">

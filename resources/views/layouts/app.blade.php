@@ -114,6 +114,12 @@
                         </svg>
                         Catálogo de Trajes
                     </a>
+                    <a href="{{ route('vendedor.alquileres.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
+                        <svg class="w-5 h-5 text-andes-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l2 2 4-4M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z"/>
+                        </svg>
+                        Alquileres
+                    </a>
                     <div class="border-t border-white/10 my-2"></div>
                     <a href="{{ route('vendedor.tienda.diseno') }}" 
                        class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-andes-amarillo/20 transition group">
@@ -175,9 +181,13 @@
                 <div class="pt-4 pb-2">
                     <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Mi Actividad</p>
                 </div>
-                <a href="#" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
-                    <svg class="w-5 h-5 text-andes-rojo" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                    Trajes Favoritos
+                <a href="{{ route('cliente.alquileres.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
+                    <svg class="w-5 h-5 text-andes-amarillo" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M5 11h14M6 21h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Mis Alquileres
+                </a>
+                <a href="{{ route('notificaciones.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
+                    <svg class="w-5 h-5 text-andes-rojo" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    Notificaciones
                 </a>
             @endrole
 
@@ -247,5 +257,38 @@
         </main>
         
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const success = @json(session('success'));
+            const errorBag = @json($errors->any() ? $errors->first() : null);
+
+            if (success) {
+                Swal.fire({ icon: 'success', title: 'Listo', text: success, timer: 2400, showConfirmButton: false });
+            }
+
+            if (errorBag) {
+                Swal.fire({ icon: 'error', title: 'Revisa los datos', text: errorBag });
+            }
+
+            document.querySelectorAll('form[data-confirm]').forEach((form) => {
+                form.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    Swal.fire({
+                        icon: 'question',
+                        title: form.dataset.confirm,
+                        showCancelButton: true,
+                        confirmButtonText: 'Si, continuar',
+                        cancelButtonText: 'Cancelar',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.removeAttribute('data-confirm');
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 </html>

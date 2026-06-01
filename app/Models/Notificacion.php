@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Notificacion extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'notificaciones';
     protected $primaryKey = 'cod_notificacion';
 
@@ -14,10 +17,13 @@ class Notificacion extends Model
         'titulo',
         'mensaje',
         'leido',
-        'tipo'
+        'tipo',
     ];
 
-    // Destinatario de la notificación
+    protected $casts = [
+        'leido' => 'boolean',
+    ];
+
     public function usuario()
     {
         return $this->belongsTo(User::class, 'cod_usuario_not', 'id');

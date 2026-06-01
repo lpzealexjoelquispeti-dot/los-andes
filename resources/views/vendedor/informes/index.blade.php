@@ -35,8 +35,8 @@
 
             {{-- KPI 2: Prendas Bloqueadas / Mantenimiento --}}
             @php 
-                $mantenimiento = $estadoInventario->firstWhere('estado_unidad', 'Mantenimiento')->total ?? 0;
-                $disponibles = $estadoInventario->firstWhere('estado_unidad', 'Disponible')->total ?? 0;
+                $mantenimiento = $estadoInventario->filter(fn ($item) => str_contains($item->estado_unidad, 'Repar'))->sum('total');
+                $disponibles = $unidadesDisponibles ?? 0;
             @endphp
             <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
                 <div>
@@ -108,7 +108,7 @@
                                 <div class="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
                                     <div class="h-full rounded-full" 
                                          style="width: {{ ($est->total / max($disponibles + $mantenimiento, 1)) * 100 }}%; 
-                                                background-color: {{ $est->estado_unidad === 'Disponible' ? '#16a34a' : ($est->estado_unidad === 'Mantenimiento' ? '#dc2626' : '#9ca3af') }}">
+                                                background-color: {{ in_array($est->estado_unidad, ['Nuevo', 'Buen Estado'], true) ? '#16a34a' : (str_contains($est->estado_unidad, 'Repar') ? '#dc2626' : '#9ca3af') }}">
                                     </div>
                                 </div>
                             </div>
@@ -137,7 +137,7 @@
             <form method="GET" action="{{ url()->current() }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-gray-50 p-5 rounded-3xl">
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-2">Nombre del Traje</label>
-                    <input type="text" name="búsqueda" value="{{ request('búsqueda') }}" placeholder="Ej: Rey Moreno..." 
+                    <input type="text" name="busqueda" value="{{ request('busqueda') }}" placeholder="Ej: Rey Moreno..." 
                            class="w-full rounded-xl border-gray-200 text-sm focus:border-gray-400 focus:ring-0 placeholder-gray-300 font-medium">
                 </div>
 
@@ -157,9 +157,10 @@
                     <label class="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-2">Estado Físico</label>
                     <select name="estado" class="w-full rounded-xl border-gray-200 text-sm focus:border-gray-400 focus:ring-0 font-medium text-gray-700">
                         <option value="">-- Todos los Estados --</option>
-                        <option value="Disponible" {{ request('estado') === 'Disponible' ? 'selected' : '' }}>Disponible</option>
-                        <option value="Mantenimiento" {{ request('estado') === 'Mantenimiento' ? 'selected' : '' }}>Mantenimiento</option>
-                        <option value="Reservado" {{ request('estado') === 'Reservado' ? 'selected' : '' }}>Reservado</option>
+                        <option value="Nuevo" {{ request('estado') === 'Nuevo' ? 'selected' : '' }}>Nuevo</option>
+                        <option value="Buen Estado" {{ request('estado') === 'Buen Estado' ? 'selected' : '' }}>Buen Estado</option>
+                        <option value="Desgastado" {{ request('estado') === 'Desgastado' ? 'selected' : '' }}>Desgastado</option>
+                        <option value="En Reparación" {{ request('estado') === 'En Reparación' ? 'selected' : '' }}>En Reparación</option>
                     </select>
                 </div>
 
@@ -168,7 +169,7 @@
                             style="background-color: {{ $colorTienda }}">
                         Filtrar Perchero
                     </button>
-                    @if(request()->hasAny(['búsqueda', 'danza', 'estado']))
+                    @if(request()->hasAny(['busqueda', 'danza', 'estado']))
                         <a href="{{ url()->current() }}" class="bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs font-black uppercase tracking-wider py-3 px-4 rounded-xl transition duration-150 text-center">
                             Limpiar
                         </a>
@@ -192,7 +193,7 @@
                         @forelse($unidadesFiltradas ?? [] as $unidad)
                             <tr class="hover:bg-gray-50/50 transition">
                                 <td class="py-4 pl-2 font-mono text-xs text-gray-400">
-                                    #{{ $unidad->cod_un_traje ?? $unidad->id }}
+                                    #{{ $unidad->cod_unidad }}
                                 </td>
                                 <td class="py-4">
                                     <div class="flex flex-col">
@@ -209,13 +210,13 @@
                                 </td>
                                 <td class="py-4">
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-tight
-                                        {{ $unidad->estado_unidad === 'Disponible' ? 'bg-green-50 text-green-700' : ($unidad->estado_unidad === 'Mantenimiento' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-600') }}">
-                                        <span class="w-1.5 h-1.5 rounded-full {{ $unidad->estado_unidad === 'Disponible' ? 'bg-green-600' : ($unidad->estado_unidad === 'Mantenimiento' ? 'bg-red-600' : 'bg-gray-500') }}"></span>
-                                        {{ $unidad->estado_unidad }}
+                                        {{ $unidad->disponibilidad ? 'bg-green-50 text-green-700' : (str_contains($unidad->estado_fisico, 'Repar') ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-600') }}">
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $unidad->disponibilidad ? 'bg-green-600' : (str_contains($unidad->estado_fisico, 'Repar') ? 'bg-red-600' : 'bg-gray-500') }}"></span>
+                                        {{ $unidad->estado_fisico }}
                                     </span>
                                 </td>
                                 <td class="py-4 text-right pr-2">
-                                    <a href="{{ route('vendedor.unidades.edit', $unidad->cod_un_traje ?? $unidad->id) }}" 
+                                    <a href="{{ route('vendedor.unidades.edit', $unidad->cod_unidad) }}" 
                                        class="text-xs font-black uppercase tracking-wider hover:underline"
                                        style="color: {{ $colorTienda }}">
                                         Gestionar

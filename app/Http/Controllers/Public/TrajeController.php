@@ -129,9 +129,9 @@ class TrajeController extends Controller
         
         // Redirección de consistencia: Si es un hijo, lo movemos al padre para mantener el catálogo unificado
         if ($traje->cod_traje_padre !== null) {
-            return redirect()->route('public.catalogo.show', $traje->cod_traje_padre);
+            return redirect()->route('public.trajes.show', $traje->cod_traje_padre);
         }
 
-        return view('public.catalogo.show', compact('traje'));
+        return redirect()->route('public.catalogo.index', ['q' => $traje->nom_traje]);
     }
 }

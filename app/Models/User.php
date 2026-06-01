@@ -2,32 +2,20 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\Tienda;
-
-
-// 1. IMPORTAMOS EL TRAIT DE SPATIE AQUÍ ARRIBA
 use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
-use SoftDeletes;
-    // 2. ACTIVAMOS EL TRAIT DE SPATIE AQUÍ ADENTRO
-    use HasRoles;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
+
     protected $dates = ['deleted_at'];
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'ap_pat',
@@ -37,21 +25,11 @@ use SoftDeletes;
         'foto_perfil',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -59,11 +37,24 @@ use SoftDeletes;
             'password' => 'hashed',
         ];
     }
-    // Relación: Un usuario puede tener una (o varias) tiendas
-    // En App\Models\User.php
-public function tiendas()
-{
-    return $this->hasMany(Tienda::class, 'cod_usuario_tie','id');
-    // Ajusta los foreign keys según tu migración
-}
+
+    public function tiendas()
+    {
+        return $this->hasMany(Tienda::class, 'cod_usuario_tie', 'id');
+    }
+
+    public function alquileres()
+    {
+        return $this->hasMany(Alquiler::class, 'cod_usuario_cli', 'id');
+    }
+
+    public function notificaciones()
+    {
+        return $this->hasMany(Notificacion::class, 'cod_usuario_not', 'id');
+    }
+
+    public function valoraciones()
+    {
+        return $this->hasMany(Valoracion::class, 'cod_usuario_val', 'id');
+    }
 }

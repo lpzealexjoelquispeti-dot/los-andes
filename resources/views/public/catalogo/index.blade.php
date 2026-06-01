@@ -4,12 +4,14 @@
             openModal: false, 
             currentTraje: {}, 
             activePhoto: 0,
+            selectedUnit: '',
             generoSeleccionado: 'M', {{-- M = Masculino (Padre), F = Femenino (Variante) --}}
 
             showTraje(trajeMaster) {
                 this.currentTraje = trajeMaster;
                 this.generoSeleccionado = 'M'; {{-- Por defecto abre siempre el Varón/Maestro --}}
                 this.activePhoto = 0;
+                this.selectedUnit = '';
                 this.openModal = true;
                 document.body.classList.add('overflow-hidden');
             },
@@ -42,6 +44,9 @@
                     return this.currentTraje.variante_femenina.unidades || [];
                 }
                 return this.currentTraje.unidades || [];
+            },
+            getUnidadesDisponibles() {
+                return this.getUnidades().filter((unidad) => unidad.disponibilidad);
             }
          }" 
          class="max-w-7xl mx-auto py-16 px-4 min-h-screen">
@@ -295,12 +300,12 @@
                     {{-- 🛑 SWITCH INTERACTIVO DE GÉNERO --}}
                     <template x-if="currentTraje.variante_femenina">
                         <div class="mb-6 p-1 bg-gray-100 rounded-2xl flex border max-w-xs shadow-inner">
-                            <button type="button" @click="generoSeleccionado = 'M'; activePhoto = 0"
+                            <button type="button" @click="generoSeleccionado = 'M'; activePhoto = 0; selectedUnit = ''"
                                     :class="generoSeleccionado === 'M' ? 'bg-white text-gray-900 shadow-md font-black' : 'text-gray-500 font-bold'"
                                     class="flex-1 py-2 text-xs uppercase rounded-xl transition-all">
                                 🤵 Bloque Varón
                             </button>
-                            <button type="button" @click="generoSeleccionado = 'F'; activePhoto = 0"
+                            <button type="button" @click="generoSeleccionado = 'F'; activePhoto = 0; selectedUnit = ''"
                                     :class="generoSeleccionado === 'F' ? 'bg-white text-gray-900 shadow-md font-black' : 'text-gray-500 font-bold'"
                                     class="flex-1 py-2 text-xs uppercase rounded-xl transition-all">
                                 💃 Bloque Damas
@@ -359,6 +364,36 @@
 
                     {{-- Botón WhatsApp Dinámico --}}
                     <div class="mt-auto">
+                        <form method="POST" action="{{ route('cliente.alquileres.store') }}" class="mb-4 rounded-3xl border border-gray-100 bg-gray-50 p-4 space-y-3">
+                            @csrf
+                            <input type="hidden" name="cod_unidad_alq" :value="selectedUnit">
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <input type="text" name="nom_evento" required placeholder="Evento folklorico"
+                                       class="rounded-2xl border-gray-200 text-sm font-bold">
+                                <input type="text" name="ubicacion" placeholder="Ubicacion"
+                                       class="rounded-2xl border-gray-200 text-sm font-bold">
+                                <input type="date" name="fec_salida" required
+                                       class="rounded-2xl border-gray-200 text-sm font-bold">
+                                <input type="date" name="fec_retorno_prev" required
+                                       class="rounded-2xl border-gray-200 text-sm font-bold">
+                            </div>
+
+                            <select x-model="selectedUnit" class="w-full rounded-2xl border-gray-200 text-sm font-bold" required>
+                                <option value="">Seleccionar unidad disponible</option>
+                                <template x-for="unidad in getUnidadesDisponibles()" :key="unidad.cod_unidad">
+                                    <option :value="unidad.cod_unidad" x-text="'Talla ' + unidad.talla + ' - Serie ' + unidad.nro_serie_interno"></option>
+                                </template>
+                            </select>
+
+                            <button type="submit"
+                                    :disabled="!selectedUnit"
+                                    class="w-full py-3 rounded-2xl text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-xl transition disabled:opacity-40 disabled:cursor-not-allowed"
+                                    :style="'background-color: ' + currentTraje.color_tienda">
+                                Reservar alquiler
+                            </button>
+                        </form>
+
                         <a :href="'https://wa.me/591' + currentTraje.whatsapp + '?text=Hola! Vengo del catálogo global MundiToys. Me interesa reservar la versión de ' + (generoSeleccionado === 'F' ? 'Damas' : 'Varón') + ' del traje: ' + getNombre()" 
                            target="_blank"
                            class="w-full py-4 rounded-2xl text-white font-black uppercase text-[11px] tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition transform hover:scale-[1.02]"

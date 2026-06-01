@@ -35,4 +35,11 @@ public function traje()
     {
         return $this->hasMany(Alquiler::class, 'cod_unidad_alq', 'cod_unidad');
     }
+
+    public function alquilerActivo()
+    {
+        return $this->hasOne(Alquiler::class, 'cod_unidad_alq', 'cod_unidad')
+            ->whereIn('est_alquiler', ['Reservado', 'Entregado', 'En Mora'])
+            ->latestOfMany('cod_alquiler');
+    }
 }

@@ -33,7 +33,7 @@
             },
 
             filtrarPrendaFisica() {
-                if (!this.searchExt) { alert('Por favor, escribe un número de extensión.'); return; }
+                if (!this.searchExt) { Swal.fire({ icon: 'warning', text: 'Por favor, escribe un numero de extension.' }); return; }
 
                 let termino = this.searchExt.trim().toUpperCase();
                 let encontrada = null;
@@ -68,7 +68,7 @@
                     );
                     this.searchExt = '';
                 } else {
-                    alert('No existe ninguna prenda física en el sistema con esa combinación de Talla, Género y Extensión.');
+                    Swal.fire({ icon: 'warning', text: 'No existe ninguna prenda fisica en el sistema con esa combinacion.' });
                 }
             }
          }">
