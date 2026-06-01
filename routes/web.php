@@ -234,7 +234,15 @@ Route::middleware(['auth', 'role:Vendedor'])->prefix('vendedor')->name('vendedor
         
     Route::get('/reportes', [\App\Http\Controllers\Vendedor\InformeEstadisticoController::class, 'index'])
         ->name('reportes.index');
-
+Route::prefix('reportes/sanciones-entregas')->name('reportes.')->group(function () {
+        // Vista web con filtros interactivos, estadísticas y tablas
+        Route::get('/', [\App\Http\Controllers\Vendedor\ReporteSancionesController::class, 'index'])
+            ->name('sanciones_entregas');
+            
+        // Descarga del PDF horizontal procesando los mismos filtros seleccionados
+        Route::get('/pdf', [\App\Http\Controllers\Vendedor\ReporteSancionesController::class, 'descargarPdf'])
+            ->name('sanciones_entregas.pdf');
+    });
     Route::get('/alquileres', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'index'])->name('alquileres.index');
     Route::get('/alquileres/{alquiler}', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'show'])->name('alquileres.show');
     Route::patch('/alquileres/{alquiler}/entregar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'entregar'])->name('alquileres.entregar');

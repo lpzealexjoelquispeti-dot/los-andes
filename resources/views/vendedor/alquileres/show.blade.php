@@ -360,11 +360,12 @@
             <div>
     <label class="text-[9px] font-black uppercase text-gray-400 tracking-wider block mb-1">Tipo de Falta</label>
     <select name="tipo_sancion" class="w-full rounded-xl border-gray-200 text-xs font-bold p-3 bg-gray-50" required>
-        <option value="1">Entrega Tardía (Mora)</option>
-        <option value="2">Prenda Dañada / Rasgada</option>
-        <option value="3">Accesorio Faltante</option>
-        <option value="4">Pérdida Total del Traje</option>
-    </select>
+    <option value="">-- Selecciona el tipo --</option>
+    <option value="Retraso">Entrega Tardía (Mora)</option>
+    <option value="Daño">Prenda Dañada / Rasgada</option>
+    <option value="Perdida">Pérdida Total del Traje</option>
+    <option value="Limpieza">Requiere Limpieza Especial</option>
+</select>
 </div>
 
             {{-- Monto de la Multa --}}

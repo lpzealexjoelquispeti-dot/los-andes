@@ -11,23 +11,40 @@ use Illuminate\Http\Request;
 
 class AlquilerController extends Controller
 {
-    public function index()
-    {
-        $alquileres = $this->baseQuery()
-            ->latest('cod_alquiler')
-            ->paginate(12);
+    public function index(Request $request)
+{
+    $query = $this->baseQuery();
 
-        return view('vendedor.alquileres.index', compact('alquileres'));
+    if ($request->filled('estado')) {
+        $query->where('est_alquiler', $request->estado);
     }
+
+    $alquileres = $query->latest('cod_alquiler')->paginate(12);
+
+    // Conteos por estado para los tabs y badges
+    $conteos = $this->baseQuery()
+        ->selectRaw('est_alquiler, count(*) as total')
+        ->groupBy('est_alquiler')
+        ->pluck('total', 'est_alquiler')
+        ->toArray();
+
+    return view('vendedor.alquileres.index', compact('alquileres', 'conteos'));
+}
 
     public function show(Alquiler $alquiler)
-    {
-        $this->autorizarAlquiler($alquiler);
+{
+    $this->autorizarAlquiler($alquiler);
 
-        $alquiler->load(['cliente', 'evento', 'unidadFisica.traje.tienda', 'sanciones']);
+    $alquiler->load([
+        'cliente',
+        'evento',
+        'unidadFisica.traje.tienda',
+        'unidadFisica.traje.imagenes', // ← agrega esto
+        'sanciones',
+    ]);
 
-        return view('vendedor.alquileres.show', compact('alquiler'));
-    }
+    return view('vendedor.alquileres.show', compact('alquiler'));
+}
 
     public function entregar(Alquiler $alquiler)
     {
