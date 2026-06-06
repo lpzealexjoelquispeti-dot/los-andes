@@ -33,7 +33,9 @@
                 {{-- ── PANEL IZQUIERDO: GESTIÓN DE FOTOS DE ESTA VARIANTE ── --}}
                 <div class="lg:col-span-1 space-y-4">
                     <div class="bg-white p-6 rounded-2xl shadow-xl border-t-4 {{ $traje->genero === 'Femenino' ? 'border-pink-500' : ($traje->genero === 'Masculino' ? 'border-blue-500' : 'border-gray-700') }}">
-                        <h3 class="text-lg font-black text-andes-oscuro uppercase mb-4 tracking-tight">Fotos de la Variante</h3>
+                        <h3 class="text-lg font-black text-andes-oscuro uppercase mb-4 tracking-tight">
+                            Fotos de la Variante <span class="text-red-500 font-bold">*</span>
+                        </h3>
                         
                         <div class="grid grid-cols-2 gap-3 mb-4">
                             {{-- Renderizado de Fotos Existentes --}}
@@ -100,34 +102,58 @@
                     <div class="bg-white p-8 rounded-2xl shadow-xl border-t-4 border-andes-verde">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             
+                            {{-- 1. Nombre Propio / Modelo de la Prenda --}}
                             <div class="md:col-span-2">
-                                <x-input-label for="nom_traje" value="Nombre del Traje" class="font-black" />
+                                <x-input-label for="nom_traje" class="font-black">
+                                    Nombre del Traje / Modelo <span class="text-red-500 font-bold">*</span>
+                                </x-input-label>
                                 <x-text-input id="nom_traje" name="nom_traje" type="text" 
-                                              class="block mt-1 w-full" 
-                                              placeholder="Ej: Morenada Central San Miguel - Varón" 
+                                              class="block mt-1 w-full @error('nom_traje') border-red-500 focus:ring-red-500 @enderror" 
+                                              placeholder="Ej: Rey Achachi Galán de Plata - Varón" 
                                               :value="old('nom_traje', $traje->nom_traje)" required />
+                                @error('nom_traje') <p class="text-red-500 text-xs mt-1 font-bold">⚠️ {{ $message }}</p> @enderror
                             </div>
 
+                            {{-- 2. Fraternidad Folclórica Asociada (🌟 ADICIONADO: Campo Independiente Requerido) --}}
+                            <div class="md:col-span-2">
+                                <x-input-label for="fraternidad" class="font-black">
+                                    Fraternidad / Agrupación Dueña del Diseño <span class="text-red-500 font-bold">*</span>
+                                </x-input-label>
+                                <x-text-input id="fraternidad" name="fraternidad" type="text" 
+                                              class="block mt-1 w-full @error('fraternidad') border-red-500 focus:ring-red-500 @enderror" 
+                                              placeholder="Ej: Morenada Central Cocani" 
+                                              :value="old('fraternidad', $traje->fraternidad)" required />
+                                @error('fraternidad') <p class="text-red-500 text-xs mt-1 font-bold">⚠️ {{ $message }}</p> @enderror
+                            </div>
+
+                            {{-- 3. Selección de Danza Coreográfica --}}
                             <div>
-                                <x-input-label for="cod_danza_traje" value="Danza / Categoría" class="font-black" />
+                                <x-input-label for="cod_danza_traje" class="font-black">
+                                    Danza / Categoría <span class="text-red-500 font-bold">*</span>
+                                </x-input-label>
                                 <select id="cod_danza_traje" name="cod_danza_traje" required 
-                                        class="block mt-1 w-full border-gray-300 focus:border-andes-verde focus:ring-andes-verde rounded-lg shadow-sm font-bold text-gray-700">
+                                        class="block mt-1 w-full border-gray-300 @error('cod_danza_traje') border-red-500 focus:ring-red-500 @else focus:border-andes-verde focus:ring-andes-verde @enderror rounded-lg shadow-sm font-bold text-gray-700">
                                     @foreach($danzas as $danza)
                                         <option value="{{ $danza->cod_danza }}" {{ old('cod_danza_traje', $traje->cod_danza_traje) == $danza->cod_danza ? 'selected' : '' }}>
                                             {{ $danza->nom_danza }}
                                         </option>
                                     @endforeach
                                 </select>
+                                @error('cod_danza_traje') <p class="text-red-500 text-xs mt-1 font-bold">⚠️ {{ $message }}</p> @enderror
                             </div>
 
+                            {{-- 4. Precio de Alquiler Base --}}
                             <div>
-                                <x-input-label for="pre_alquiler" value="Precio de Alquiler (Bs)" class="font-black" />
-                                <x-text-input id="pre_alquiler" name="pre_alquiler" type="number" step="0.01" min="0"
-                                              class="block mt-1 w-full" 
+                                <x-input-label for="pre_alquiler" class="font-black">
+                                    Precio de Alquiler (Bs) <span class="text-red-500 font-bold">*</span>
+                                </x-input-label>
+                                <x-text-input id="pre_alquiler" name="pre_alquiler" type="number" step="0.50" min="0"
+                                              class="block mt-1 w-full @error('pre_alquiler') border-red-500 focus:ring-red-500 @enderror" 
                                               :value="old('pre_alquiler', $traje->pre_alquiler)" required />
+                                @error('pre_alquiler') <p class="text-red-500 text-xs mt-1 font-bold">⚠️ {{ $message }}</p> @enderror
                             </div>
 
-                            {{-- Sincronizador dinámico de existencias físicas --}}
+                            {{-- 5. Sincronizador Dinámico de Existencias Físicas --}}
                             <div class="md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-200">
                                 <x-input-label value="Tallas Disponibles en Stock para este Bloque" class="font-black uppercase text-xs tracking-wider text-gray-500 mb-3" />
                                 
@@ -153,14 +179,19 @@
                                 <p class="text-[10px] text-gray-400 font-bold mt-2 uppercase">💡 Nota: Desmarcar una talla eliminará sus series físicas de la vitrina.</p>
                             </div>
 
+                            {{-- 6. Color Dominante --}}
                             <div>
-                                <x-input-label for="color_traje" value="Color Dominante" class="font-black" />
+                                <x-input-label for="color_traje" class="font-black">
+                                    Color Dominante <span class="text-red-500 font-bold">*</span>
+                                </x-input-label>
                                 <x-text-input id="color_traje" name="color_traje" type="text" 
                                               placeholder="Ej: Rojo y Blanco" 
-                                              class="block mt-1 w-full" 
+                                              class="block mt-1 w-full @error('color_traje') border-red-500 focus:ring-red-500 @enderror" 
                                               :value="old('color_traje', $traje->color_traje)" required />
+                                @error('color_traje') <p class="text-red-500 text-xs mt-1 font-bold">⚠️ {{ $message }}</p> @enderror
                             </div>
 
+                            {{-- 7. Descripción Corta del Diseño --}}
                             <div class="md:col-span-2">
                                 <x-input-label for="des_traje" value="Descripción de esta Variante" class="font-black" />
                                 <textarea id="des_traje" name="des_traje" rows="4" 
@@ -168,6 +199,7 @@
                             </div>
                         </div>
 
+                        {{-- Botonera de Control --}}
                         <div class="mt-8 flex justify-end gap-3 pt-6 border-t border-gray-100">
                             <a href="{{ route('vendedor.trajes.index') }}" class="py-4 px-8 rounded-xl font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition text-xs">Cancelar</a>
                             <button type="submit" 

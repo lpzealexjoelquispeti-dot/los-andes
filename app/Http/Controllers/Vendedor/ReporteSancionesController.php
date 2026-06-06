@@ -44,7 +44,7 @@ class ReporteSancionesController extends Controller
         $sanciones = collect();
         if (in_array($tipoReporte, ['sanciones', 'ambos'])) {
             $qSanciones = SancionAlquiler::with([
-                'alquiler.unidadFisica.traje.tienda', // <-- MODIFICADO CON TU RELACIÓN REAL
+                'alquiler.unidadFisica.traje.tienda',
                 'alquiler.cliente',
                 'alquiler.evento',
             ])
@@ -65,11 +65,10 @@ class ReporteSancionesController extends Controller
                 $qSanciones->where('tipo_sancion', $filtros['tipo_sancion']);
             }
 
-            // Filtro pagada
-          // Filtro pagada (Validando que la clave exista en la petición actual)
-if (array_key_exists('pagada', $filtros) && $filtros['pagada'] !== null && $filtros['pagada'] !== '') {
-    $qSanciones->where('pagada', (bool) $filtros['pagada']);
-}
+            // Filtro pagada blindado
+            if (array_key_exists('pagada', $filtros) && $filtros['pagada'] !== null && $filtros['pagada'] !== '') {
+                $qSanciones->where('pagada', (bool) $filtros['pagada']);
+            }
 
             // Filtro fecha (usa created_at de la sanción)
             if (!empty($filtros['fec_desde'])) {
@@ -86,7 +85,7 @@ if (array_key_exists('pagada', $filtros) && $filtros['pagada'] !== null && $filt
         $entregas = collect();
         if (in_array($tipoReporte, ['entregas', 'ambos'])) {
             $qEntregas = Alquiler::with([
-                'unidadFisica.traje.tienda', // <-- MODIFICADO CON TU RELACIÓN REAL
+                'unidadFisica.traje.tienda',
                 'cliente',
                 'evento',
                 'sanciones',
@@ -147,30 +146,59 @@ if (array_key_exists('pagada', $filtros) && $filtros['pagada'] !== null && $filt
     }
 
     /**
-     * Descarga el PDF con los mismos filtros.
+     * Descarga el PDF con los mismos filtros y blindaje total de arrays.
      */
     public function descargarPdf(Request $request)
     {
         $vendedor = Auth::user();
-        $tiendas  = Tienda::where('cod_usuario_tie', $vendedor->id)->whereNull('deleted_at')->get();
+        
+        $tiendas = Tienda::where('cod_usuario_tie', $vendedor->id)
+            ->whereNull('deleted_at')
+            ->get();
 
-        $filtros     = $request->only(['cod_tienda','tipo_reporte','tipo_sancion','est_alquiler','pagada','fec_desde','fec_hasta','orden']);
+        $filtros = $request->only([
+            'cod_tienda',
+            'tipo_reporte',
+            'tipo_sancion',
+            'est_alquiler',
+            'pagada',
+            'fec_desde',
+            'fec_hasta',
+            'orden'
+        ]);
+        
         $tipoReporte = $filtros['tipo_reporte'] ?? 'ambos';
 
         // ── Sanciones ──
         $sanciones = collect();
         if (in_array($tipoReporte, ['sanciones', 'ambos'])) {
-            $q = SancionAlquiler::with(['alquiler.unidadFisica.traje.tienda', 'alquiler.cliente', 'alquiler.evento'])
-                ->whereHas('alquiler.unidadFisica.traje.tienda', fn($q) => $q->where('cod_usuario_tie', $vendedor->id))
-                ->whereNull('sanciones_alquiler.deleted_at');
+            $q = SancionAlquiler::with([
+                'alquiler.unidadFisica.traje.tienda', 
+                'alquiler.cliente', 
+                'alquiler.evento'
+            ])
+            ->whereHas('alquiler.unidadFisica.traje.tienda', fn($q) => $q->where('cod_usuario_tie', $vendedor->id))
+            ->whereNull('sanciones_alquiler.deleted_at');
                 
             if (!empty($filtros['cod_tienda'])) {
                 $q->whereHas('alquiler.unidadFisica.traje.tienda', fn($t) => $t->where('cod_tienda', $filtros['cod_tienda']));
             }
-            if (!empty($filtros['tipo_sancion'])) $q->where('tipo_sancion', $filtros['tipo_sancion']);
-            if ($filtros['pagada'] !== null && $filtros['pagada'] !== '') $q->where('pagada', (bool)$filtros['pagada']);
-            if (!empty($filtros['fec_desde']))    $q->whereDate('sanciones_alquiler.created_at', '>=', $filtros['fec_desde']);
-            if (!empty($filtros['fec_hasta']))    $q->whereDate('sanciones_alquiler.created_at', '<=', $filtros['fec_hasta']);
+            
+            if (!empty($filtros['tipo_sancion'])) {
+                $q->where('tipo_sancion', $filtros['tipo_sancion']);
+            }
+            
+            // 🌟 BLINDAJE CRÍTICO APLICADO AQUÍ: Evita el error de clave indefinida al llamar al PDF
+            if (array_key_exists('pagada', $filtros) && $filtros['pagada'] !== null && $filtros['pagada'] !== '') {
+                $q->where('pagada', (bool)$filtros['pagada']);
+            }
+            
+            if (!empty($filtros['fec_desde'])) {
+                $q->whereDate('sanciones_alquiler.created_at', '>=', $filtros['fec_desde']);
+            }
+            if (!empty($filtros['fec_hasta'])) {
+                $q->whereDate('sanciones_alquiler.created_at', '<=', $filtros['fec_hasta']);
+            }
             
             $sanciones = $q->get();
         }
@@ -178,22 +206,44 @@ if (array_key_exists('pagada', $filtros) && $filtros['pagada'] !== null && $filt
         // ── Entregas ──
         $entregas = collect();
         if (in_array($tipoReporte, ['entregas', 'ambos'])) {
-            $q = Alquiler::with(['unidadFisica.traje.tienda', 'cliente', 'evento', 'sanciones'])
-                ->whereHas('unidadFisica.traje.tienda', fn($q) => $q->where('cod_usuario_tie', $vendedor->id))
-                ->whereIn('est_alquiler', ['Entregado', 'Devuelto', 'En Mora'])
-                ->whereNull('alquileres.deleted_at');
+            $q = Alquiler::with([
+                'unidadFisica.traje.tienda', 
+                'cliente', 
+                'evento', 
+                'sanciones'
+            ])
+            ->whereHas('unidadFisica.traje.tienda', fn($q) => $q->where('cod_usuario_tie', $vendedor->id))
+            ->whereIn('est_alquiler', ['Entregado', 'Devuelto', 'En Mora'])
+            ->whereNull('alquileres.deleted_at');
                 
             if (!empty($filtros['cod_tienda'])) {
                 $q->whereHas('unidadFisica.traje.tienda', fn($t) => $t->where('cod_tienda', $filtros['cod_tienda']));
             }
-            if (!empty($filtros['est_alquiler'])) $q->where('est_alquiler', $filtros['est_alquiler']);
-            if (!empty($filtros['fec_desde']))    $q->whereDate('fec_salida', '>=', $filtros['fec_desde']);
-            if (!empty($filtros['fec_hasta']))    $q->whereDate('fec_salida', '<=', $filtros['fec_hasta']);
             
-            $q->orderByDesc('fec_salida');
+            if (!empty($filtros['est_alquiler'])) {
+                $q->where('est_alquiler', $filtros['est_alquiler']);
+            }
+            
+            if (!empty($filtros['fec_desde'])) {
+                $q->whereDate('fec_salida', '>=', $filtros['fec_desde']);
+            }
+            if (!empty($filtros['fec_hasta'])) {
+                $q->whereDate('fec_salida', '<=', $filtros['fec_hasta']);
+            }
+            
+            // Conservamos el ordenamiento seleccionado por el usuario en el PDF
+            $orden = $filtros['orden'] ?? 'fecha_desc';
+            match ($orden) {
+                'monto_desc'  => $q->orderByDesc('monto_total'),
+                'monto_asc'   => $q->orderBy('monto_total'),
+                'fecha_asc'   => $q->orderBy('fec_salida'),
+                default       => $q->orderByDesc('fec_salida'),
+            };
+            
             $entregas = $q->get();
         }
 
+        // Resumen unificado para los bloques informativos superiores del PDF
         $resumen = [
             'total_sanciones'      => $sanciones->count(),
             'monto_sanciones'      => $sanciones->sum('monto_sancion'),
@@ -209,6 +259,7 @@ if (array_key_exists('pagada', $filtros) && $filtros['pagada'] !== null && $filt
             ? $tiendas->firstWhere('cod_tienda', $filtros['cod_tienda'])?->nom_tie ?? 'Todas'
             : 'Todas mis tiendas';
 
+        // Renderizado del PDF horizontal ('landscape')
         $pdf = Pdf::loadView('vendedor.reportes.pdf.sanciones_entregas_pdf', compact(
             'sanciones', 'entregas', 'resumen', 'filtros', 'tipoReporte', 'tiendasNombre', 'vendedor'
         ))->setPaper('a4', 'landscape');

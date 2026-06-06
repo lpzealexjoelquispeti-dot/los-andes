@@ -199,12 +199,14 @@
             {{-- Sanciones si las hay --}}
             @if($alquiler->sanciones?->count())
                 <div class="info-block border-red-100 bg-red-50/40 fade-in">
-                    <p class="info-label text-red-500 mb-3">Sanciones aplicadas</p>
+                    <p class="info-label text-red-500 mb-3">Sanciones applied</p>
                     <div class="space-y-2">
                         @foreach($alquiler->sanciones as $sancion)
                             <div class="flex items-center justify-between py-2 border-b border-red-100 last:border-0">
                                 <div>
-                                    <p class="text-sm font-bold text-gray-800">{{ $sancion->tipo_sancion }}</p>
+                                    <p class="text-sm font-bold text-gray-800">
+                                        {{ $sancion->tipo_sancion === 'Dano' ? 'Daño / Rotura' : $sancion->tipo_sancion }}
+                                    </p>
                                     @if($sancion->descripcion)
                                         <p class="text-[11px] text-gray-500">{{ $sancion->descripcion }}</p>
                                     @endif
@@ -258,7 +260,7 @@
                 @endif
             </div>
 
-            {{-- ACCIONES según estado --}}
+            {{-- ACCIONES SEGÚN ESTADO COMERCIAL --}}
             <div class="space-y-3 fade-in">
 
                 {{-- ── PENDIENTE: aprobar o rechazar ── --}}
@@ -307,23 +309,22 @@
                     </form>
                 @endif
 
-                {{-- ── ENTREGADO: registrar devolución ── --}}
+                {{-- ── ENTREGADO: Levantar modales de devolución o sanción con Alpine ── --}}
                 @if($alquiler->est_alquiler === 'Entregado')
-                    <form method="POST" action="{{ route('vendedor.alquileres.devolver', $alquiler->cod_alquiler) }}">
-                        @csrf @method('PATCH')
-                        <button type="submit" class="btn-primary w-full" style="background:#DA291C">
-                            ↩ Registrar devolución
-                        </button>
-                    </form>
-                    <a href="{{ route('vendedor.alquileres.sanciones.store', $alquiler->cod_alquiler) }}"
-                       class="btn-outline w-full border-2 border-orange-200 text-orange-600 hover:bg-orange-50 text-center block"
-                       x-data
-                       @click.prevent="$dispatch('open-sanciones')">
-                        ⚠ Aplicar sanción
-                    </a>
+                    <button type="button" class="btn-primary w-full text-center block text-white font-black" style="background:#007A33"
+                            x-data 
+                            @click="$dispatch('open-devolucion')">
+                        ↩ Registrar Devolución
+                    </button>
+                    
+                    <button type="button" class="btn-outline w-full border-2 border-orange-200 text-orange-600 hover:bg-orange-50 text-center block"
+                            x-data
+                            @click="$dispatch('open-sanciones')">
+                        ⚠ Aplicar Sanción / Multa
+                    </button>
                 @endif
 
-                {{-- Botón volver --}}
+                {{-- Botón de retorno general --}}
                 <a href="{{ route('vendedor.alquileres.index') }}"
                    class="btn-outline w-full border-2 border-gray-200 text-gray-500 hover:border-gray-400 text-center block">
                     ← Volver a alquileres
@@ -333,7 +334,8 @@
         </div>
     </div>
 </div>
-{{-- MODAL DE SANCIONES ANIDADAS --}}
+
+{{-- ── MODAL DE SANCIONES ANIDADAS ── --}}
 <div x-data="{ open: false }" 
      @open-sanciones.window="open = true" 
      x-show="open" 
@@ -352,39 +354,90 @@
         <form method="POST" action="{{ route('vendedor.alquileres.sanciones.store', $alquiler->cod_alquiler) }}" class="space-y-4">
             @csrf
             
-            {{-- Tipo de Sanción (Alineado con la validación) --}}
             <div>
-    <label class="text-[9px] font-black uppercase text-gray-400 tracking-wider block mb-1">Tipo de Falta</label>
-    <select name="tipo_sancion" class="w-full rounded-xl border-gray-200 text-xs font-bold p-3 bg-gray-50" required>
-    <option value="">-- Selecciona el tipo --</option>
-    <option value="Retraso">Entrega Tardía (Mora)</option>
-    <option value="Daño">Prenda Dañada / Rasgada</option>
-    <option value="Perdida">Pérdida Total del Traje</option>
-    <option value="Limpieza">Requiere Limpieza Especial</option>
-</select>
-</div>
+                <label class="text-[9px] font-black uppercase text-gray-400 tracking-wider block mb-1">Tipo de Falta</label>
+                <select name="tipo_sancion" class="w-full rounded-xl border-gray-200 text-xs font-bold p-3 bg-gray-50" required>
+                    <option value="">-- Selecciona el tipo --</option>
+                    <option value="Retraso">Entrega Tardía (Mora)</option>
+                    <option value="Dano">Prenda Dañada / Rasgada</option>
+                    <option value="Perdida">Pérdida Total del Traje</option>
+                    <option value="Limpieza">Requiere Limpieza Especial</option>
+                </select>
+            </div>
 
-            {{-- Monto de la Multa --}}
             <div>
                 <label class="text-[9px] font-black uppercase text-gray-400 tracking-wider block mb-1">Monto de la multa (Bs.)</label>
                 <input type="number" name="monto_sancion" min="1" step="1" required placeholder="Ej. 50"
                        class="w-full rounded-xl border-gray-200 text-xs font-bold p-3">
             </div>
 
-            {{-- Descripción del daño --}}
             <div>
                 <label class="text-[9px] font-black uppercase text-gray-400 tracking-wider block mb-1">Detalle o Justificación</label>
                 <textarea name="descripcion" rows="3" required placeholder="Ej. Presenta una rotura en el ala izquierda..."
                           class="w-full rounded-xl border-gray-200 text-xs font-bold p-3"></textarea>
             </div>
 
-            {{-- Botones de acción --}}
             <div class="flex gap-2 pt-2">
                 <button type="button" @click="open = false" class="flex-1 py-3 bg-gray-100 text-gray-600 text-[11px] font-black uppercase tracking-wider rounded-xl">
                     Cancelar
                 </button>
                 <button type="submit" class="flex-1 py-3 bg-orange-600 text-white text-[11px] font-black uppercase tracking-wider rounded-xl shadow-lg shadow-orange-600/20">
                     Aplicar Sanción
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ── MODAL PARA REGISTRAR LA DEVOLUCIÓN FÍSICA ── --}}
+<div x-data="{ openDevolucion: false }" 
+     @open-devolucion.window="openDevolucion = true" 
+     x-show="openDevolucion" 
+     x-cloak
+     class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+     x-transition>
+    
+    <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-100 space-y-4"
+         @click.away="openDevolucion = false">
+        
+        <div class="flex justify-between items-center border-b pb-2">
+            <h3 class="text-sm font-black text-gray-900 uppercase tracking-wider">↩ Registrar Retorno de Prenda</h3>
+            <button @click="openDevolucion = false" class="text-gray-400 hover:text-gray-600 font-bold text-xs">✕</button>
+        </div>
+
+        <form method="POST" action="{{ route('vendedor.alquileres.devolver', $alquiler->cod_alquiler) }}" class="space-y-4">
+            @csrf
+            @method('PATCH')
+            
+            <div>
+                <label class="text-[9px] font-black uppercase text-gray-400 tracking-wider block mb-1">Fecha de Entrega Real</label>
+                <input type="date" name="fec_retorno_real" required 
+                       value="{{ old('fec_retorno_real', now()->format('Y-m-d')) }}"
+                       class="w-full rounded-xl border-gray-200 text-xs font-bold p-3 bg-gray-50">
+            </div>
+
+            <div>
+                <label class="text-[9px] font-black uppercase text-gray-400 tracking-wider block mb-1">Estado Físico de Retorno</label>
+                <select name="estado_fisico" class="w-full rounded-xl border-gray-200 text-xs font-bold p-3 bg-gray-50" required>
+                    <option value="Buen Estado" {{ old('estado_fisico') == 'Buen Estado' ? 'selected' : '' }}>Buen Estado (Listo para lavar/alquilar)</option>
+                    <option value="Nuevo" {{ old('estado_fisico') == 'Nuevo' ? 'selected' : '' }}>Como Nuevo</option>
+                    <option value="Desgastado" {{ old('estado_fisico') == 'Desgastado' ? 'selected' : '' }}>Desgastado por uso regular</option>
+                    <option value="En Reparación" {{ old('estado_fisico') == 'En Reparación' ? 'selected' : '' }}>🛠️ Requiere ingresar a Taller (Desactiva disponibilidad)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-[9px] font-black uppercase text-gray-400 tracking-wider block mb-1">Observaciones de Recepción</label>
+                <textarea name="observaciones" rows="3" placeholder="Ej. Ninguna pieza faltante, faja en buen estado..."
+                          class="w-full rounded-xl border-gray-200 text-xs font-bold p-3">{{ old('observaciones', 'Devuelto conforme.') }}</textarea>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button type="button" @click="openDevolucion = false" class="flex-1 py-3 bg-gray-100 text-gray-600 text-[11px] font-black uppercase tracking-wider rounded-xl">
+                    Cancelar
+                </button>
+                <button type="submit" class="flex-1 py-3 bg-emerald-600 text-white text-[11px] font-black uppercase tracking-wider rounded-xl shadow-lg shadow-emerald-600/20">
+                    Confirmar Retorno
                 </button>
             </div>
         </form>

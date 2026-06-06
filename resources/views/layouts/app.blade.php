@@ -114,12 +114,7 @@
                         </svg>
                         Catálogo de Trajes
                     </a>
-                    <a href="{{ route('vendedor.alquileres.index') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
-                        <svg class="w-5 h-5 text-andes-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l2 2 4-4M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z"/>
-                        </svg>
-                        Alquileres
-                    </a>
+                   
                     <div class="border-t border-white/10 my-2"></div>
                     <a href="{{ route('vendedor.tienda.diseno') }}" 
                        class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-andes-amarillo/20 transition group">
@@ -153,36 +148,8 @@
                         </svg>
                         <span>Imprimir Etiquetas</span>
                     </a>
-                @endif
 
-                {{-- DROPDOWN DE REPORTES PARA EL VENDEDOR --}}
-                <div x-data="{ openReportesVendedor: false }" class="pt-2">
-    <button @click="openReportesVendedor = !openReportesVendedor" class="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg font-medium transition text-gray-300 hover:text-white hover:bg-white/5">
-        <div class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-andes-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-            </svg>
-            <span>Mis Reportes</span>
-        </div>
-        <svg :class="openReportesVendedor ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-        </svg>
-    </button>
-
-    <div x-show="openReportesVendedor" x-cloak x-transition class="mt-2 ml-4 space-y-1">
-        <a href="{{ route('vendedor.reportes.index') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
-            <div class="w-2 h-2 rounded-full bg-andes-amarillo"></div>
-            Inventario Parametrizado
-        </a>
-
-        <a href="{{ route('vendedor.reportes.sanciones_entregas') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition {{ request()->routeIs('vendedor.reportes.sanciones_entregas') ? 'text-white bg-white/5 font-semibold' : '' }}">
-            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-            Sanciones y Entregas
-        </a>
-    </div>
-</div>
-                {{-- Alquileres con dropdown y badge de pendientes --}}
-<div x-data="{ openAlquileres: false }">
+                    <div x-data="{ openAlquileres: false }">
     <button @click="openAlquileres = !openAlquileres" 
             class="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
         <div class="flex items-center gap-3">
@@ -255,7 +222,38 @@
         </a>
 
     </div>
+    <div x-data="{ openReportesVendedor: false }" class="pt-2">
+    <button @click="openReportesVendedor = !openReportesVendedor" class="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg font-medium transition text-gray-300 hover:text-white hover:bg-white/5">
+        <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-andes-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            <span>Mis Reportes</span>
+        </div>
+        <svg :class="openReportesVendedor ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+    </button>
+
+    <div x-show="openReportesVendedor" x-cloak x-transition class="mt-2 ml-4 space-y-1">
+        <a href="{{ route('vendedor.reportes.index') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+            <div class="w-2 h-2 rounded-full bg-andes-amarillo"></div>
+            Inventario Parametrizado
+        </a>
+
+        <a href="{{ route('vendedor.reportes.sanciones_entregas') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition {{ request()->routeIs('vendedor.reportes.sanciones_entregas') ? 'text-white bg-white/5 font-semibold' : '' }}">
+            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+            Sanciones y Entregas
+        </a>
+    </div>
 </div>
+                @endif
+
+                {{-- DROPDOWN DE REPORTES PARA EL VENDEDOR --}}
+                
+</div>
+                {{-- Alquileres con dropdown y badge de pendientes --}}
+
             @endrole
 
             @role('Cliente')

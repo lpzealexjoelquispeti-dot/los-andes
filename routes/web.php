@@ -2,7 +2,13 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\TiendaController;
+use App\Http\Controllers\Vendedor\TrajeController;
+use App\Http\Controllers\Vendedor\InformeEstadisticoController;
+use App\Http\Controllers\Vendedor\ReporteSancionesController;
+use App\Http\Controllers\Vendedor\AlquilerController;
+use App\Http\Controllers\Vendedor\TrajeUnidadController;
+use App\Http\Controllers\Vendedor\TrajeImpresionController;
 // ====================================================================
 // 1. ZONA PÚBLICA (Accesible para todos)
 // ====================================================================
@@ -208,86 +214,89 @@ Route::middleware(['auth', 'role:Vendedor'])->prefix('vendedor')->name('vendedor
         return view('dashboard', ['header' => 'Mi Tienda y Negocio']);
     })->name('dashboard');
     
-    // RUTAS DE LA TIENDA (VENDEDOR)
-    Route::get('/mi-tienda', [\App\Http\Controllers\TiendaController::class, 'index'])->name('tienda.index');
-    Route::get('/mi-tienda/nueva', [\App\Http\Controllers\TiendaController::class, 'create'])->name('tienda.create');
-    Route::post('/mi-tienda', [\App\Http\Controllers\TiendaController::class, 'store'])->name('tienda.store');
-    Route::get('/mi-tienda/{id}/editar', [\App\Http\Controllers\TiendaController::class, 'edit'])->name('tienda.edit');
-    Route::put('/mi-tienda/{id}', [\App\Http\Controllers\TiendaController::class, 'update'])->name('tienda.update');
+    /*
+    |--------------------------------------------------------------------------
+    | GESTIÓN DE LA TIENDA
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/mi-tienda', [TiendaController::class, 'index'])->name('tienda.index');
+    Route::get('/mi-tienda/nueva', [TiendaController::class, 'create'])->name('tienda.create');
+    Route::post('/mi-tienda', [TiendaController::class, 'store'])->name('tienda.store');
+    Route::get('/mi-tienda/{id}/editar', [TiendaController::class, 'edit'])->name('tienda.edit');
+    Route::put('/mi-tienda/{id}', [TiendaController::class, 'update'])->name('tienda.update');
     
-    // Ruta restore colocada estratégicamente sobre el resource
-    Route::post('/trajes/{id}/restore', [App\Http\Controllers\Vendedor\TrajeController::class, 'restore'])->name('trajes.restore');
+    Route::get('/tienda/diseno', [TiendaController::class, 'diseno'])->name('tienda.diseno');
+    Route::post('/tienda/diseno', [TiendaController::class, 'storeDiseno'])->name('tienda.diseno.store');
 
-    // Resource de Trajes
-    Route::resource('trajes', App\Http\Controllers\Vendedor\TrajeController::class);
-    Route::get('/tienda/diseno', [App\Http\Controllers\TiendaController::class, 'diseno'])->name('tienda.diseno');
-    Route::post('/tienda/diseno', [App\Http\Controllers\TiendaController::class, 'storeDiseno'])->name('tienda.diseno.store');
+    /*
+    |--------------------------------------------------------------------------
+    | CATÁLOGO MAESTRO DE TRAJES
+    |--------------------------------------------------------------------------
+    */
+    // Ruta restore colocada estratégicamente sobre el resource
+    Route::post('/trajes/{id}/restore', [TrajeController::class, 'restore'])->name('trajes.restore');
+    Route::post('/trajes/{id}/destroy-total', [TrajeController::class, 'destroyTotal'])->name('trajes.destroyTotal');
+    Route::post('/trajes/{id}/restore-total', [TrajeController::class, 'restoreTotal'])->name('trajes.restoreTotal');
     
+    // Resource de Trajes
+    Route::resource('trajes', TrajeController::class);
+
+    /*
+    |--------------------------------------------------------------------------
+    | GESTIÓN DE INVENTARIO (UNIDADES FÍSICAS DE LOS TRAJES)
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/trajes/{cod_traje}/unidades', [TrajeUnidadController::class, 'index'])->name('trajes.unidades.index');
+    Route::get('/trajes/{cod_traje}/unidades/nueva', [TrajeUnidadController::class, 'create'])->name('trajes.unidades.create');
+    Route::post('/trajes/{cod_traje}/unidades', [TrajeUnidadController::class, 'store'])->name('trajes.unidades.store');
+    Route::get('/trajes/{cod_traje}/unidades/danos', [TrajeUnidadController::class, 'danos'])->name('trajes.unidades.danos');
+    
+    Route::get('/unidades/{id}/editar', [TrajeUnidadController::class, 'edit'])->name('unidades.edit');
+    Route::put('/unidades/{id}', [TrajeUnidadController::class, 'update'])->name('unidades.update');
+    Route::delete('/unidades/{id}', [TrajeUnidadController::class, 'destroy'])->name('unidades.destroy');
+    Route::post('/unidades/{id}/restore', [TrajeUnidadController::class, 'restore'])->name('unidades.restore');
+
+    /*
+    |--------------------------------------------------------------------------
+    | FLUJO OPERATIVO DE ALQUILERES, DEVOLUCIONES Y SANCIONES
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/alquileres', [AlquilerController::class, 'index'])->name('alquileres.index');
+    Route::get('/alquileres/{alquiler}', [AlquilerController::class, 'show'])->name('alquileres.show');
+    
+    // Acciones de estado del Alquiler
+    Route::patch('/alquileres/{alquiler}/aprobar', [AlquilerController::class, 'aprobar'])->name('alquileres.aprobar');
+    Route::patch('/alquileres/{alquiler}/rechazar', [AlquilerController::class, 'rechazar'])->name('alquileres.rechazar');
+    Route::patch('/alquileres/{alquiler}/entregar', [AlquilerController::class, 'entregar'])->name('alquileres.entregar');
+    Route::patch('/alquileres/{alquiler}/devolver', [AlquilerController::class, 'devolver'])->name('alquileres.devolver');
+    Route::patch('/alquileres/{alquiler}/cancelar', [AlquilerController::class, 'cancelar'])->name('alquileres.cancelar');
+    
+    // Gestión de Sanciones financieras por Daños o Mora
+    Route::post('/alquileres/{alquiler}/sanciones', [AlquilerController::class, 'sancionar'])->name('alquileres.sanciones.store');
+    Route::patch('/sanciones/{sancion}/pagar', [AlquilerController::class, 'pagarSancion'])->name('sanciones.pagar');
+
     /*
     |--------------------------------------------------------------------------
     | INFORMES Y REPORTES PARAMETRIZADOS (Corrección Unificada)
     |--------------------------------------------------------------------------
     */
-    // Ambas acciones (ver estadísticas generales y filtrar el perchero) apuntan al mismo index compartiendo la vista
-    Route::get('/informes-estadisticos', [\App\Http\Controllers\Vendedor\InformeEstadisticoController::class, 'index'])
-        ->name('informes.index');
-        
-    Route::get('/reportes', [\App\Http\Controllers\Vendedor\InformeEstadisticoController::class, 'index'])
-        ->name('reportes.index');
-Route::prefix('reportes/sanciones-entregas')->name('reportes.')->group(function () {
-        // Vista web con filtros interactivos, estadísticas y tablas
-        Route::get('/', [\App\Http\Controllers\Vendedor\ReporteSancionesController::class, 'index'])
-            ->name('sanciones_entregas');
-            
-        // Descarga del PDF horizontal procesando los mismos filtros seleccionados
-        Route::get('/pdf', [\App\Http\Controllers\Vendedor\ReporteSancionesController::class, 'descargarPdf'])
-            ->name('sanciones_entregas.pdf');
+    Route::get('/informes-estadisticos', [InformeEstadisticoController::class, 'index'])->name('informes.index');
+    Route::get('/reportes', [InformeEstadisticoController::class, 'index'])->name('reportes.index');
+
+    Route::prefix('reportes/sanciones-entregas')->name('reportes.')->group(function () {
+        Route::get('/', [ReporteSancionesController::class, 'index'])->name('sanciones_entregas');
+        Route::get('/pdf', [ReporteSancionesController::class, 'descargarPdf'])->name('sanciones_entregas.pdf');
     });
-    Route::get('/alquileres', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'index'])->name('alquileres.index');
-    Route::get('/alquileres/{alquiler}', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'show'])->name('alquileres.show');
-    Route::patch('/alquileres/{alquiler}/entregar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'entregar'])->name('alquileres.entregar');
-    Route::patch('/alquileres/{alquiler}/devolver', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'devolver'])->name('alquileres.devolver');
-    Route::patch('/alquileres/{alquiler}/cancelar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'cancelar'])->name('alquileres.cancelar');
-    Route::post('/alquileres/{alquiler}/sanciones', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'sancionar'])->name('alquileres.sanciones.store');
-    Route::patch('/sanciones/{sancion}/pagar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'pagarSancion'])->name('sanciones.pagar');
-    
-    // ── GESTIÓN DE INVENTARIO (UNIDADES FÍSICAS DE LOS TRAJES) ──
-    Route::get('/trajes/{cod_traje}/unidades/danos', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'danos'])
-        ->name('trajes.unidades.danos');
- 
-    Route::get('/trajes/{cod_traje}/unidades', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'index'])
-        ->name('trajes.unidades.index');
- 
-    Route::get('/trajes/{cod_traje}/unidades/nueva', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'create'])
-        ->name('trajes.unidades.create');
 
-    // ── MÓDULO INDUSTRIAL DE IMPRESIÓN Y REPOSICIÓN DE ACCESORIOS ──
-    Route::get('/trajes/{id}/impresion', [App\Http\Controllers\Vendedor\TrajeImpresionController::class, 'panelImpresion'])->name('trajes.impresion.panel');
-    Route::post('/trajes/{id}/impresion/pdf', [App\Http\Controllers\Vendedor\TrajeImpresionController::class, 'descargarPdf'])->name('trajes.impresion.pdf');
-    Route::get('/unidades/{id}/reimprimir/{pieza}', [App\Http\Controllers\Vendedor\TrajeImpresionController::class, 'reimprimirPieza'])->name('unidades.reimprimir.pieza');
+    /*
+    |--------------------------------------------------------------------------
+    | MÓDULO INDUSTRIAL DE IMPRESIÓN Y REPOSICIÓN DE ACCESORIOS
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/trajes/{id}/impresion', [TrajeImpresionController::class, 'panelImpresion'])->name('trajes.impresion.panel');
+    Route::post('/trajes/{id}/impresion/pdf', [TrajeImpresionController::class, 'descargarPdf'])->name('trajes.impresion.pdf');
+    Route::get('/unidades/{id}/reimprimir/{pieza}', [TrajeImpresionController::class, 'reimprimirPieza'])->name('unidades.reimprimir.pieza');
 
-    Route::post('/trajes/{cod_traje}/unidades', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'store'])
-        ->name('trajes.unidades.store');
-        
-    Route::post('/trajes/{id}/destroy-total', [App\Http\Controllers\Vendedor\TrajeController::class, 'destroyTotal'])->name('trajes.destroyTotal');
-    Route::post('/trajes/{id}/restore-total', [App\Http\Controllers\Vendedor\TrajeController::class, 'restoreTotal'])->name('trajes.restoreTotal');
-         
-    Route::get('/unidades/{id}/editar', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'edit'])
-        ->name('unidades.edit');
- 
-    Route::put('/unidades/{id}', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'update'])
-        ->name('unidades.update');
- 
-    Route::delete('/unidades/{id}', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'destroy'])
-        ->name('unidades.destroy');
- 
-    Route::post('/unidades/{id}/restore', [\App\Http\Controllers\Vendedor\TrajeUnidadController::class, 'restore'])
-        ->name('unidades.restore');
-    Route::patch('/alquileres/{alquiler}/aprobar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'aprobar'])
-    ->name('alquileres.aprobar');
-
-Route::patch('/alquileres/{alquiler}/rechazar', [\App\Http\Controllers\Vendedor\AlquilerController::class, 'rechazar'])
-    ->name('alquileres.rechazar');
 });
 
 

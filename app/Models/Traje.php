@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne; // <-- Importante para la variante
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Traje extends Model
 {
@@ -15,8 +15,10 @@ class Traje extends Model
     protected $table = 'trajes'; 
     protected $primaryKey = 'cod_traje';
     
-    // Carbon convertirá estos campos a objetos de fecha automáticamente
-    protected $dates = ['deleted_at'];
+    // 🌟 Estándar moderno de Laravel 12 para mutación de fechas (Reemplaza a $dates)
+    protected $casts = [
+        'deleted_at' => 'datetime',
+    ];
 
     protected $fillable = [
         'nom_traje', 
@@ -25,9 +27,10 @@ class Traje extends Model
         'talla_traje', 
         'color_traje',
         'genero',
+        'fraternidad',      // 🌟 ADICIONADO: Permite el guardado seguro del nuevo campo
         'cod_tienda_traje', // Llave foránea hacia Tiendas
         'cod_danza_traje',   // Llave foránea hacia Danzas
-        'cod_traje_padre'   // <-- Agregado para permitir registrar variantes sin errores de MassAssignment
+        'cod_traje_padre'   
     ];
 
     /**
@@ -35,7 +38,6 @@ class Traje extends Model
      */
     public function varianteFemenina(): HasOne
     {
-        // 'cod_traje_padre' es la FK en la tabla trajes que apunta al 'cod_traje' del padre
         return $this->hasOne(Traje::class, 'cod_traje_padre', 'cod_traje');
     }
 
@@ -56,7 +58,7 @@ class Traje extends Model
     }
 
     /**
-     * RELACIÓN: Un traje pertenece a una DANZA
+     * RELACIÓN: Un traje belongsTo a una DANZA
      */
     public function danza(): BelongsTo
     {

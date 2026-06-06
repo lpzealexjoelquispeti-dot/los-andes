@@ -7,6 +7,7 @@ use App\Models\EventoFolclorico;
 use App\Models\InventarioUnidad;
 use App\Models\Notificacion;
 use App\Models\Valoracion;
+use App\Models\SancionAlquiler; // 🌟 IMPORTACIÓN ADICIONADA: Evita el error de clase no encontrada
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,11 +27,11 @@ class AlquilerController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'cod_unidad_alq'    => ['required', 'exists:inventario_unidades,cod_unidad'],
-            'fec_salida'        => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . now()->addDays(7)->toDateString()],
-            'fec_retorno_prev'  => ['required', 'date', 'after_or_equal:fec_salida'],
-            'nom_evento'        => ['required', 'string', 'max:255'],
-            'ubicacion'         => ['nullable', 'string', 'max:255'],
+            'cod_unidad_alq'      => ['required', 'exists:inventario_unidades,cod_unidad'],
+            'fec_salida'          => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . now()->addDays(7)->toDateString()],
+            'fec_retorno_prev'    => ['required', 'date', 'after_or_equal:fec_salida'],
+            'nom_evento'          => ['required', 'string', 'max:255'],
+            'ubicacion'           => ['nullable', 'string', 'max:255'],
             'nro_celular_cliente' => ['required', 'string', 'max:20'],
             'nombre_garante'      => ['required', 'string', 'max:255'],
             'ci_garante'          => ['required', 'string', 'max:20'],
@@ -48,8 +49,7 @@ class AlquilerController extends Controller
                 ])->withInput();
             }
 
-            // 🟢 REGULA DE ORO: Guardar en el disco 'public' (Almacenamiento simbólico)
-            // Esto creará el archivo en storage/app/public/comprobantes/...
+            // 🟢 REGLA DE ORO: Guardar en el disco 'public' (Almacenamiento simbólico)
             $comprobantePath = $request->file('comprobante_pago')->store('comprobantes', 'public');
 
             $evento = EventoFolclorico::create([
@@ -64,28 +64,22 @@ class AlquilerController extends Controller
             $sena   = round($monto * 0.40, 2); 
 
             $alquiler = Alquiler::create([
-                'cod_usuario_cli'     => auth()->id(),
-                'cod_unidad_alq'      => $unidad->cod_unidad,
-                'cod_evento_alq'      => $evento->cod_evento,
-                'fec_salida'          => $data['fec_salida'],
-                'fec_retorno_prev'    => $data['fec_retorno_prev'],
-                'monto_total'         => $monto,
-                'garantia'            => 0,
-                'est_alquiler'        => 'Pendiente_Aprobacion', 
-                'nro_celular_cliente' => $data['nro_celular_cliente'],
-                'nombre_garante'      => $data['nombre_garante'],
-                'ci_garante'          => $data['ci_garante'],
-                
-                // ⚠️ VERIFICA AQUÍ: Debe llamarse igual al campo de tu migración
-                // Si en tu base de datos la columna es 'comprobante_pago_path', déjala así. 
-                // Si la llamaste 'ruta_comprobante' o 'comprobante_pago', cámbiala aquí:
+                'cod_usuario_cli'       => auth()->id(),
+                'cod_unidad_alq'        => $unidad->cod_unidad,
+                'cod_evento_alq'        => $evento->cod_evento,
+                'fec_salida'            => $data['fec_salida'],
+                'fec_retorno_prev'      => $data['fec_retorno_prev'],
+                'monto_total'           => $monto,
+                'garantia'              => 0,
+                'est_alquiler'          => 'Pendiente_Aprobacion', 
+                'nro_celular_cliente'   => $data['nro_celular_cliente'],
+                'nombre_garante'        => $data['nombre_garante'],
+                'ci_garante'            => $data['ci_garante'],
                 'comprobante_pago_path' => $comprobantePath, 
-                
-                'monto_sena'          => $sena,
-                'fecha_limite_pago'   => null, 
+                'monto_sena'            => $sena,
+                'fecha_limite_pago'     => null, 
             ]);
 
-            // Notificaciones...
             Notificacion::create([
                 'cod_usuario_not' => auth()->id(),
                 'titulo'  => 'Solicitud enviada — en revisión',
@@ -112,12 +106,10 @@ class AlquilerController extends Controller
     public function cancelar(Alquiler $alquiler)
     {
         abort_unless($alquiler->cod_usuario_cli === auth()->id(), 403);
-        // Ahora también puede cancelar si está Pendiente_Aprobacion
         abort_if(! in_array($alquiler->est_alquiler, ['Pendiente_Aprobacion', 'Reservado'], true), 422);
 
         $alquiler->update(['est_alquiler' => 'Cancelado']);
 
-        // Solo liberar la unidad si ya estaba bloqueada (estado Reservado)
         if ($alquiler->getOriginal('est_alquiler') === 'Reservado') {
             $unidad = $alquiler->unidadFisica;
             $unidad?->update([
@@ -167,12 +159,10 @@ class AlquilerController extends Controller
 
         return back()->with('success', 'Valoracion registrada correctamente.');
     }
-    /**
- * Vendedor aprueba la solicitud → unidad se bloquea y estado pasa a Reservado
- */
-public function aprobar(Alquiler $alquiler)
+
+    public function aprobar(Alquiler $alquiler)
     {
-        abort_unless($alquiler->unidadFisica->traje->tienda->cod_usuario_tie === auth()->id(), 403);
+        $this->autorizarAlquiler($alquiler);
         abort_if($alquiler->est_alquiler !== 'Pendiente_Aprobacion', 422);
 
         DB::transaction(function () use ($alquiler) {
@@ -181,7 +171,7 @@ public function aprobar(Alquiler $alquiler)
 
             Notificacion::create([
                 'cod_usuario_not' => $alquiler->cod_usuario_cli,
-                'titulo'  => '¡Alquiler confirmado!',
+                'titulo'  => '¡Alquiler confirmed!',
                 'mensaje' => 'El vendedor aprobó tu solicitud de ' . $alquiler->unidadFisica->traje->nom_traje . '.',
                 'tipo'    => 'exito',
             ]);
@@ -192,7 +182,7 @@ public function aprobar(Alquiler $alquiler)
 
     public function rechazar(Request $request, Alquiler $alquiler)
     {
-        abort_unless($alquiler->unidadFisica->traje->tienda->cod_usuario_tie === auth()->id(), 403);
+        $this->autorizarAlquiler($alquiler);
         abort_if($alquiler->est_alquiler !== 'Pendiente_Aprobacion', 422);
 
         $data = $request->validate([
@@ -213,65 +203,100 @@ public function aprobar(Alquiler $alquiler)
 
         return back()->with('success', 'Solicitud rechazada.');
     }
-    /**
-     * Aplicar una sanción o registrar daños sobre el alquiler
-     */
- /**
-     * Aplicar una sanción o registrar daños sobre el alquiler
-     */
+
     public function sancionar(Request $request, Alquiler $alquiler)
     {
-        abort_unless($alquiler->unidadFisica->traje->tienda->cod_usuario_tie === auth()->id(), 403);
-        abort_if(!in_array($alquiler->est_alquiler, ['Entregado', 'En Mora']), 422);
+        // 1. Muro preventivo de seguridad: llama al método de soporte unificado
+        $this->autorizarAlquiler($alquiler);
 
-        // 1. Validamos que venga estrictamente un número entre 1 y 4
+        // 2. Validación de datos sanitizada para evitar tildes cruzadas en la DB
         $data = $request->validate([
-            'tipo_sancion'  => ['required', 'integer', 'in:1,2,3,4'],
-            'monto_sancion' => ['required', 'numeric', 'min:0'],
-            'descripcion'   => ['required', 'string', 'max:1000'],
+            'tipo_sancion'  => ['required', 'in:Retraso,Dano,Perdida,Limpieza'],
+            'monto_sancion' => ['required', 'numeric', 'min:1'],
+            'descripcion'   => ['required', 'string', 'min:5', 'max:1000'],
+        ], [
+            'tipo_sancion.in'      => 'El tipo de falta seleccionado no es válido en el catálogo folclórico.',
+            'monto_sancion.min'    => 'El monto de la multa debe ser mayor o igual a Bs. 1.',
+            'descripcion.required' => 'Debes justificar el motivo o el daño detallado de la prenda.',
+            'descripcion.min'      => 'La justificación debe tener al menos 5 caracteres explicativos.'
         ]);
 
-        // 2. Traducimos el número al string real que espera tu base de datos
-        $textoTipoSancion = match ((int)$data['tipo_sancion']) {
-            1 => 'Entrega Tardia',
-            2 => 'Prenda Danada',
-            3 => 'Accesorio Faltante',
-            4 => 'Perdida Total',
-        };
+        // 3. Inserción segura mediante Eloquent
+        $sancion = SancionAlquiler::create([
+            'cod_alquiler_ref' => $alquiler->cod_alquiler,
+            'tipo_sancion'     => $data['tipo_sancion'], 
+            'monto_sancion'    => $data['monto_sancion'],
+            'descripcion'      => $data['descripcion'],
+            'pagada'           => false,
+        ]);
 
-        \DB::transaction(function () use ($alquiler, $data, $textoTipoSancion) {
-            
-            // 3. Creamos el registro con el texto traducido
-            $alquiler->sanciones()->create([
-                'cod_alquiler_ref' => $alquiler->cod_alquiler,
-                'tipo_sancion'     => $textoTipoSancion, 
-                'monto_sancion'    => $data['monto_sancion'],
-                'descripcion'      => $data['descripcion'],
-                'pagada'           => false, 
-            ]);
+        $alquiler->update(['est_alquiler' => 'En Mora']);
+
+        Notificacion::create([
+            'cod_usuario_not' => $alquiler->cod_usuario_cli,
+            'titulo'          => '🚨 Sanción registrada',
+            'mensaje'         => 'Se registró una multa de Bs. ' . number_format($sancion->monto_sancion, 0) . ' bajo el concepto de: ' . ($sancion->tipo_sancion === 'Dano' ? 'Daño' : $sancion->tipo_sancion) . '.',
+            'tipo'            => 'alerta',
+        ]);
+
+        return back()->with('success', '¡Sanción y multa aplicadas correctamente al fraterno!');
+    }
+
+    public function devolver(Request $request, Alquiler $alquiler)
+    {
+        $this->autorizarAlquiler($alquiler);
+
+        $data = $request->validate([
+            'fec_retorno_real' => ['required', 'date'],
+            'estado_fisico'    => ['required', 'in:Nuevo,Buen Estado,Desgastado,En Reparación'],
+            'observaciones'    => ['nullable', 'string', 'max:1000'],
+        ], [
+            'fec_retorno_real.required' => 'La fecha de retorno real es obligatoria para cerrar el ciclo.',
+            'estado_fisico.required'    => 'Debes auditar el estado físico en el que regresa el traje.',
+            'estado_fisico.in'          => 'El estado seleccionado no coincide con las categorías del perchero.'
+        ]);
+
+        DB::transaction(function () use ($alquiler, $data) {
+            $fechaPrevista = Carbon::parse($alquiler->fec_retorno_prev);
+            $fechaReal     = Carbon::parse($data['fec_retorno_real']);
+            $enMora        = $fechaReal->greaterThan($fechaPrevista);
 
             $alquiler->update([
-                'est_alquiler' => 'En Mora'
+                'fec_retorno_real' => $data['fec_retorno_real'],
+                'est_alquiler'     => $enMora ? 'En Mora' : 'Devuelto',
             ]);
 
-            // Si es daño crítico, remover del catálogo público
-            if (in_array((int)$data['tipo_sancion'], [2, 4], true)) {
+            if ($alquiler->unidadFisica) {
                 $alquiler->unidadFisica->update([
-                    'disponibilidad' => false
+                    'estado_fisico'  => $data['estado_fisico'],
+                    'observaciones'  => $data['observaciones'] ?? 'Devuelto conforme.',
+                    'disponibilidad' => $data['estado_fisico'] !== 'En Reparación',
                 ]);
             }
 
-            // Notificación al cliente
-            \App\Models\Notificacion::create([
+            Notificacion::create([
                 'cod_usuario_not' => $alquiler->cod_usuario_cli,
-                'titulo'          => '⚠ Has recibido una sanción',
-                'mensaje'         => 'Se aplicó una penalización de Bs. ' . $data['monto_sancion'] . ' a tu alquiler de ' . $alquiler->unidadFisica->traje->nom_traje . '. Motivo: ' . $data['descripcion'],
-                'tipo'            => 'alerta',
+                'titulo'          => $enMora ? '⚠️ Devolución fuera de plazo' : '↩️ Prenda recibida',
+                'mensaje'         => $enMora 
+                    ? 'Tu devolución del traje fue registrada pero superó la fecha límite.' 
+                    : 'El traje fue recibido conforme. ¡Gracias por confiar en Los Andes!',
+                'tipo'            => $enMora ? 'alerta' : 'exito',
             ]);
-            
         });
 
-        return back()->with('success', 'Sanción aplicada correctamente.');
+        return back()->with('success', '¡Devolución e inventario actualizados con éxito en el sistema!');
     }
 
+    /**
+     * 🌟 MÉTODO DE SOPORTE ADICIONADO: Centraliza la seguridad operativa del módulo comercial
+     */
+    private function autorizarAlquiler(Alquiler $alquiler)
+    {
+        // Bloquea peticiones cruzadas verificando la sucursal/tienda del vendedor autenticado
+        abort_unless(
+            $alquiler->unidadFisica?->traje?->tienda?->cod_usuario_tie === auth()->id(), 
+            403, 
+            'No tienes los privilegios comerciales requeridos sobre esta sucursal.'
+        );
+    }
 }
