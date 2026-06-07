@@ -128,6 +128,31 @@
         padding: .3rem .8rem;
         border-radius: 999px;
     }
+
+    /* ── Pasarela de pago Yape ── */
+    .yape-gateway   { border: 1.5px solid #ece3f3; }
+    .yape-header    { background: linear-gradient(135deg, #6E2A8C 0%, #A347C9 100%); }
+    .yape-logo {
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 800;
+        font-size: 1.25rem;
+        color: #fff;
+        letter-spacing: -.02em;
+        line-height: 1;
+    }
+    .yape-step {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.15rem;
+        height: 1.15rem;
+        border-radius: 999px;
+        background: #6E2A8C;
+        color: #fff;
+        font-size: .6rem;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
 </style>
 
 <div class="wiz-body max-w-6xl mx-auto px-4 py-12 min-h-screen">
@@ -359,38 +384,77 @@
                     <h2 class="wiz-display text-xl text-gray-800 mb-1">Sube tu comprobante de seña</h2>
                     <p class="text-[11px] text-gray-400 font-medium mb-8 uppercase tracking-wider">Paso 3 de 3 — último paso</p>
 
-                    {{-- Monto a pagar --}}
-                    <div class="rounded-2xl p-5 mb-6 border-2" style="background: var(--brand-light); border-color: var(--brand-mid)">
-                        <p class="text-[9px] font-black uppercase tracking-widest mb-1" style="color: var(--brand)">
-                            Seña a depositar (40% del total)
-                        </p>
-                        <p class="wiz-display text-4xl font-black" style="color: var(--brand)" id="sena-display">
-                            Bs. {{ $sena }}
-                        </p>
-                        <p class="text-[10px] font-medium text-gray-500 mt-1">
-                            Total del alquiler: <span class="font-black text-gray-700" id="total-display">Bs. {{ $monto }}</span>
-                            — resto se paga al recoger en tienda
-                        </p>
-                    </div>
+                    {{-- ══════════════════════════════════════
+                         PASARELA DE PAGO — YAPE
+                         ══════════════════════════════════════ --}}
+                    <div class="yape-gateway rounded-[1.75rem] overflow-hidden mb-6 shadow-lg">
 
-                    {{-- Info tienda --}}
-                    <div class="bg-gray-50 rounded-2xl p-4 mb-6 flex items-center gap-4 border border-gray-100">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                             style="background: var(--brand-light)">
-                            <svg class="w-5 h-5" style="color: var(--brand)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                            </svg>
+                        {{-- Cabecera Yape --}}
+                        <div class="yape-header flex items-center justify-between px-6 py-4">
+                            <div class="flex items-center gap-2.5">
+                                <span class="yape-logo">Yape</span>
+                                <span class="text-white/70 text-[10px] font-bold uppercase tracking-widest">Pago de seña</span>
+                            </div>
+                            <span class="bg-white/15 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
+                                40% adelanto
+                            </span>
                         </div>
-                        <div>
-                            <p class="font-black text-sm text-gray-800">{{ $tienda->nom_tie }}</p>
-                            <p class="text-[10px] text-gray-500 font-medium">{{ $tienda->dir_tie }}</p>
-                            @if($tienda->diseno?->link_whatsapp)
-                                <a href="https://wa.me/591{{ $tienda->diseno->link_whatsapp }}"
-                                   target="_blank"
-                                   class="text-[9px] font-bold uppercase tracking-wider text-emerald-600 hover:underline">
-                                    Pedir QR de pago por WhatsApp →
-                                </a>
-                            @endif
+
+                        {{-- Monto --}}
+                        <div class="bg-white px-6 py-5 text-center">
+                            <p class="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Monto a pagar ahora</p>
+                            <p class="wiz-display text-4xl font-black text-gray-900" id="sena-display">
+                                Bs. {{ $sena }}
+                            </p>
+                            <p class="text-[10px] font-medium text-gray-500 mt-1.5">
+                                Total del alquiler: <span class="font-black text-gray-700" id="total-display">Bs. {{ $monto }}</span>
+                                — el resto se paga al recoger en tienda
+                            </p>
+                        </div>
+
+                        {{-- Pasos + tienda + botón QR --}}
+                        <div class="bg-white px-6 pb-6">
+                            <div class="border-t border-gray-100 pt-4">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 text-lg">
+                                        🏪
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="font-black text-sm text-gray-800 truncate">{{ $tienda->nom_tie }}</p>
+                                        <p class="text-[10px] text-gray-500 font-medium truncate">{{ $tienda->dir_tie }}</p>
+                                    </div>
+                                </div>
+
+                                <ol class="space-y-1.5 mb-5">
+                                    <li class="flex items-center gap-2 text-[11px] font-semibold text-gray-600">
+                                        <span class="yape-step">1</span> Pide el QR de Yape a la tienda por WhatsApp
+                                    </li>
+                                    <li class="flex items-center gap-2 text-[11px] font-semibold text-gray-600">
+                                        <span class="yape-step">2</span> Yapea la seña de <span class="font-black text-gray-800" id="paso-sena">Bs. {{ $sena }}</span>
+                                    </li>
+                                    <li class="flex items-center gap-2 text-[11px] font-semibold text-gray-600">
+                                        <span class="yape-step">3</span> Sube aquí la captura del comprobante
+                                    </li>
+                                </ol>
+
+                                @if($tienda->diseno?->link_whatsapp)
+                                    <a href="#"
+                                       id="btn-qr-whatsapp"
+                                       data-base="https://wa.me/591{{ $tienda->diseno->link_whatsapp }}"
+                                       target="_blank"
+                                       class="w-full py-3.5 rounded-2xl text-white font-black uppercase text-[11px]
+                                              tracking-[0.15em] shadow-md flex items-center justify-center gap-2.5
+                                              transition transform hover:scale-[1.02]"
+                                       style="background: linear-gradient(135deg, #6E2A8C, #A347C9);">
+                                        <x-si-whatsapp class="w-4 h-4 fill-current" />
+                                        Pedir QR de Yape por WhatsApp
+                                    </a>
+                                @else
+                                    <p class="text-[10px] text-center text-gray-400 font-medium italic">
+                                        Coordina el pago de la seña directamente con la tienda al recoger.
+                                    </p>
+                                @endif
+                            </div>
                         </div>
                     </div>
 
@@ -535,6 +599,34 @@
 
 <script>
     const precioBase = {{ $traje->pre_alquiler }};
+    const trajeNombre = @json(str_replace([' - Varón', ' - Dama'], '', $traje->nom_traje));
+    const tiendaNombre = @json($tienda->nom_tie);
+
+    // ─── Mensaje predefinido para pedir el QR de Yape por WhatsApp ───
+    function actualizarMensajeYape() {
+        const btn = document.getElementById('btn-qr-whatsapp');
+        if (!btn) return;
+
+        const evento  = (document.getElementById('nom_evento')?.value || '').trim();
+        const salida  = document.getElementById('fec_salida')?.value;
+        const retorno = document.getElementById('fec_retorno')?.value;
+        const sena    = document.getElementById('paso-sena')?.textContent?.trim() || 'Bs. {{ $sena }}';
+
+        const fmt = d => d
+            ? new Date(d + 'T12:00:00').toLocaleDateString('es-BO', { day: '2-digit', month: 'short' })
+            : '';
+        const fechas = (salida && retorno) ? (fmt(salida) + ' al ' + fmt(retorno)) : 'por confirmar';
+
+        const mensaje =
+            `¡Hola ${tiendaNombre}! 👋 Quiero pagar la seña de mi alquiler por Yape.\n\n` +
+            `🎭 Traje: ${trajeNombre}\n` +
+            `📅 Evento: ${evento || 'por confirmar'}\n` +
+            `🗓️ Fechas: ${fechas}\n` +
+            `💰 Seña a pagar (40%): ${sena}\n\n` +
+            `¿Me puedes enviar el QR de Yape para realizar el pago? ¡Gracias! 🙌`;
+
+        btn.href = btn.dataset.base + '?text=' + encodeURIComponent(mensaje);
+    }
 
     // ─── Navegación wizard ───
     function goTo(step) {
@@ -600,9 +692,12 @@
         document.getElementById('sena-display').textContent = 'Bs. ' + sena;
         document.getElementById('total-display').textContent = 'Bs. ' + total.toLocaleString();
         document.getElementById('resumen-sena').textContent  = 'Bs. ' + sena;
+        document.getElementById('paso-sena').textContent     = 'Bs. ' + sena;
 
         // Fecha retorno mínima = fecha salida
         document.getElementById('fec_retorno').min = salida;
+
+        actualizarMensajeYape();
     }
 
     document.getElementById('fec_salida').addEventListener('change', calcularPrecio);
@@ -634,7 +729,11 @@
             const fmt = d => new Date(d + 'T12:00:00').toLocaleDateString('es-BO', { day:'2-digit', month:'short' });
             document.getElementById('resumen-fechas').textContent = fmt(salida) + ' → ' + fmt(retorno);
         }
+        actualizarMensajeYape();
     }
+
+    // Inicializa el mensaje de WhatsApp con los datos base
+    document.addEventListener('DOMContentLoaded', actualizarMensajeYape);
 </script>
 
 </x-public-layout>

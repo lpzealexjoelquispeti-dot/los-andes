@@ -98,6 +98,9 @@
                             return this.currentTraje.variante_femenina.unidades || [];
                         }
                         return this.currentTraje.unidades || [];
+                    },
+                    getUnidadesDisponibles() {
+                        return this.getUnidades().filter((unidad) => unidad.disponibilidad);
                     }
                  }"
                  style="background-color: {{ $colorFondo }};">
@@ -381,27 +384,57 @@
                                 Categoría: <span class="text-gray-800" x-text="currentTraje.danza?.nom_danza || 'General'"></span>
                             </p>
                             
-                            <div class="grid grid-cols-2 gap-6 py-6 border-y border-gray-100 mb-8">
+                            <div class="py-6 border-y border-gray-100 mb-8 space-y-5">
+                                {{-- Precio --}}
                                 <div>
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Precio Alquiler</p>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Precio Alquiler / día</p>
                                     <p class="text-3xl font-black" style="color: {{ $colorPrimario }}">
-                                        Bs. <span x-text="generoSeleccionado === 'F' ? currentTraje.variante_femenina.pre_alquiler : currentTraje.pre_alquiler"></span>
+                                        Bs. <span x-text="generoSeleccionado === 'F' && currentTraje.variante_femenina ? currentTraje.variante_femenina.pre_alquiler : currentTraje.pre_alquiler"></span>
                                     </p>
                                 </div>
+
+                                {{-- Tallas clicables → inician el alquiler en línea --}}
                                 <div>
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tallas en Stock</p>
-                                    <div class="flex flex-wrap gap-1.5">
-                                        <template x-if="getUnidades().length > 0">
-                                            <template x-for="unidad in getUnidades()" :key="unidad.cod_unidad">
-                                                <span class="text-xs font-black px-2.5 py-1 rounded-lg uppercase border shadow-sm"
-                                                      style="color: {{ $colorPrimario }}; border-color: {{ $colorPrimario }}20; background-color: {{ $colorPrimario }}08"
-                                                      x-text="unidad.talla"></span>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                                        Elige tu talla para alquilar
+                                    </p>
+
+                                    {{-- Con unidades disponibles --}}
+                                    <template x-if="getUnidadesDisponibles().length > 0">
+                                        <div class="flex flex-wrap gap-2">
+                                            <template x-for="unidad in getUnidadesDisponibles()" :key="unidad.cod_unidad">
+                                                <a :href="'/reservar/' + unidad.cod_unidad"
+                                                   class="group px-4 py-2.5 rounded-xl border-2 font-black text-xs uppercase
+                                                          transition-all duration-200 hover:shadow-md hover:scale-105
+                                                          flex flex-col items-center gap-0.5 cursor-pointer"
+                                                   style="border-color: {{ $colorPrimario }}40; color: {{ $colorPrimario }}; background-color: {{ $colorPrimario }}08"
+                                                   x-on:mouseover="$el.style.backgroundColor = '{{ $colorPrimario }}22'"
+                                                   x-on:mouseleave="$el.style.backgroundColor = '{{ $colorPrimario }}08'">
+                                                    <span x-text="unidad.talla" class="text-sm leading-none"></span>
+                                                    <span class="text-[8px] font-semibold opacity-50 normal-case tracking-normal"
+                                                          x-text="unidad.estado_fisico"></span>
+                                                </a>
                                             </template>
-                                        </template>
-                                        <template x-if="getUnidades().length === 0">
-                                            <span class="text-xs font-bold text-gray-400 italic">Agotado temporalmente</span>
-                                        </template>
-                                    </div>
+                                        </div>
+                                    </template>
+
+                                    {{-- Sin unidades disponibles --}}
+                                    <template x-if="getUnidadesDisponibles().length === 0">
+                                        <div class="flex items-center gap-2 py-3 px-4 bg-red-50 rounded-xl border border-red-100">
+                                            <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <span class="text-xs font-bold text-red-500">Sin tallas disponibles por el momento</span>
+                                        </div>
+                                    </template>
+
+                                    {{-- Contador de disponibilidad --}}
+                                    <template x-if="getUnidades().length > 0">
+                                        <p class="text-[9px] text-gray-400 font-medium mt-2">
+                                            <span x-text="getUnidadesDisponibles().length"></span> de
+                                            <span x-text="getUnidades().length"></span> unidades disponibles
+                                        </p>
+                                    </template>
                                 </div>
                             </div>
 
@@ -412,14 +445,29 @@
                             </div>
 
                             <div class="mt-10">
-                                <a :href="'https://wa.me/591{{ $diseno->link_whatsapp }}?text=Hola! Vengo de tu tienda virtual. Me interesa el bloque de ' + (generoSeleccionado === 'F' ? 'Damas' : 'Varón') + ' para el traje: ' + getNombre()"
-                                   target="_blank"
-                                   class="w-full py-4 rounded-2xl text-white font-black uppercase text-xs tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition transform hover:scale-105"
-                                   style="background-color: {{ $colorPrimario }}">
-                                    
-                                    <x-si-whatsapp class="w-5 h-5 fill-current" />
-                                    Consultar Disponibilidad
-                                </a>
+                                {{-- Con stock → WhatsApp como consulta secundaria (la acción principal es elegir talla) --}}
+                                <template x-if="getUnidadesDisponibles().length > 0">
+                                    <a :href="'https://wa.me/591{{ $diseno->link_whatsapp }}?text=Hola! Vengo de tu tienda virtual. Me interesa el bloque de ' + (generoSeleccionado === 'F' ? 'Damas' : 'Varón') + ' para el traje: ' + getNombre()"
+                                       target="_blank"
+                                       class="w-full py-3.5 rounded-2xl bg-white text-gray-500 font-bold uppercase
+                                              text-[10px] tracking-[0.15em] border-2 border-gray-200
+                                              flex items-center justify-center gap-2
+                                              transition hover:border-gray-400 hover:text-gray-700">
+                                        <x-si-whatsapp class="w-4 h-4 fill-current text-emerald-500" />
+                                        ¿Dudas? Consulta por WhatsApp
+                                    </a>
+                                </template>
+
+                                {{-- Sin stock → WhatsApp prominente para consultar disponibilidad --}}
+                                <template x-if="getUnidadesDisponibles().length === 0">
+                                    <a :href="'https://wa.me/591{{ $diseno->link_whatsapp }}?text=Hola! Vengo de tu tienda virtual. Me interesa el bloque de ' + (generoSeleccionado === 'F' ? 'Damas' : 'Varón') + ' para el traje: ' + getNombre() + '. ¿Cuándo habrá disponibilidad?'"
+                                       target="_blank"
+                                       class="w-full py-4 rounded-2xl text-white font-black uppercase text-xs tracking-[0.2em] shadow-xl flex items-center justify-center gap-3 transition transform hover:scale-105"
+                                       style="background-color: {{ $colorPrimario }}">
+                                        <x-si-whatsapp class="w-5 h-5 fill-current" />
+                                        Consultar Disponibilidad
+                                    </a>
+                                </template>
                             </div>
                         </div>
                     </div>
