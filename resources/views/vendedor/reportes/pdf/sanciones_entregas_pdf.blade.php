@@ -151,7 +151,7 @@
     
     .data-table td.right  { text-align: right; }
     .data-table td.center { text-align: center; }
-    .data-table td.muted  { color: #6b7280; font-size: 7px; font-mono: true; }
+    .data-table td.muted  { color: #6b7280; font-size: 7px; font-family: monospace; }
 
     .data-table tfoot td {
         padding: 6px;
@@ -271,15 +271,15 @@
 <table class="data-table">
     <thead>
         <tr>
-            <th style="width: 4%;">ID</th>
+            <th style="width: 5%;">ID</th>
             <th style="width: 10%;">Tipo Falta</th>
-            <th style="width: 16%;">Cliente</th>
-            <th style="width: 18%;">Prenda Coreográfica</th>
+            <th style="width: 15%;">Cliente</th>
+            <th style="width: 20%;">Prenda Coreográfica</th>
             <th style="width: 10%;">N/Serie</th>
-            <th style="width: 12%;">Evento Folclórico</th>
+            <th style="width: 15%;">Evento Folclórico</th>
             <th class="right" style="width: 10%;">Monto</th>
-            <th class="center" style="width: 8%;">Estado</th>
-            <th style="width: 12%;">Fecha Falta</th>
+            <th class="center" style="width: 5%;">Estado</th>
+            <th style="width: 10%;">Fecha Falta</th>
         </tr>
     </thead>
     <tbody>
@@ -300,7 +300,6 @@
                 <span class="badge {{ $bt }}">{{ $s->tipo_sancion === 'Dano' ? 'Daño' : $s->tipo_sancion }}</span>
             </td>
             <td style="font-weight: bold;">{{ $s->alquiler->cliente->name ?? '—' }} {{ $s->alquiler->cliente->ap_pat ?? '' }}</td>
-            {{-- 🌟 CORRECCIÓN CRÍTICA: Uso de la relación real unidadFisica --}}
             <td>{{ $s->alquiler->unidadFisica->traje->nom_traje ?? ($s->alquiler->unidad->traje->nom_traje ?? '—') }}</td>
             <td class="muted">{{ $s->alquiler->unidadFisica->nro_serie_interno ?? ($s->alquiler->unidad->nro_serie_interno ?? '—') }}</td>
             <td class="muted">{{ $s->alquiler->evento->nom_evento ?? '—' }}</td>
@@ -341,18 +340,18 @@
 <table class="data-table">
     <thead>
         <tr>
-            <th style="width: 4%;">ID</th>
-            <th style="width: 16%;">Cliente Destinatario</th>
+            <th style="width: 5%;">ID</th>
+            <th style="width: 15%;">Cliente Destinatario</th>
             <th style="width: 10%;">Nro Celular</th>
             <th style="width: 18%;">Prenda Coreográfica</th>
-            <th class="center" style="width: 5%;">Talla</th>
-            <th style="width: 12%;">Evento</th>
-            <th style="width: 8%;">Despacho</th>
-            <th style="width: 8%;">Ret. Prev.</th>
-            <th style="width: 8%;">Ret. Real</th>
-            <th class="right" style="width: 10%;">Monto Alq.</th>
-            <th class="center" style="width: 8%;">Estado</th>
-            <th class="center" style="width: 5%;">Sanc.</th>
+            <th class="center" style="width: 4%;">Talla</th>
+            <th style="width: 13%;">Evento</th>
+            <th style="width: 7%;">Despacho</th>
+            <th style="width: 7%;">Ret. Prev.</th>
+            <th style="width: 7%;">Ret. Real</th>
+            <th class="right" style="width: 9%;">Monto Alq.</th>
+            <th class="center" style="width: 5%;">Estado</th>
+            <th class="center" style="width: 4%;">Sanc.</th>
         </tr>
     </thead>
     <tbody>
@@ -370,7 +369,6 @@
             <td class="muted">#{{ $e->cod_alquiler }}</td>
             <td style="font-weight: bold;">{{ $e->cliente->name ?? '—' }} {{ $e->cliente->ap_pat ?? '' }}</td>
             <td class="muted">{{ $e->nro_celular_cliente ?? '—' }}</td>
-            {{-- 🌟 CORRECCIÓN CRÍTICA: Uso de la relación real unidadFisica --}}
             <td>{{ $e->unidadFisica->traje->nom_traje ?? ($e->unidad->traje->nom_traje ?? '—') }}</td>
             <td class="center muted">{{ $e->unidadFisica->talla ?? ($e->unidad->talla ?? 'U') }}</td>
             <td class="muted">{{ $e->evento->nom_evento ?? '—' }}</td>
@@ -393,7 +391,7 @@
     </tbody>
     <tfoot>
         <tr>
-            <td colspan="9">TOTAL BRUTO FACTURADO EN ENTEGAS Y COBROS</td>
+            <td colspan="9">TOTAL BRUTO FACTURADO EN ENTREGAS Y COBROS</td>
             <td class="right" style="color:#15803d; font-size:9px;">Bs {{ number_format($entregas->sum('monto_total'), 2) }}</td>
             <td colspan="2"></td>
         </tr>

@@ -11,7 +11,6 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-    <!-- Estilo para evitar parpadeo de Alpine.js -->
     <style>
         [x-cloak] { display: none !important; }
     </style>
@@ -19,7 +18,6 @@
 
 <body class="font-sans antialiased text-gray-900 bg-gray-100 flex h-screen overflow-hidden" x-data="{ sidebarOpen: false }">
 
-    <!-- Sidebar -->
     <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" 
            class="fixed z-50 inset-y-0 left-0 w-64 bg-andes-oscuro text-andes-blanco transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-0 flex flex-col shadow-2xl">
         
@@ -118,7 +116,6 @@
                     <div class="border-t border-white/10 my-2"></div>
                     <a href="{{ route('vendedor.tienda.diseno') }}" 
                        class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-andes-amarillo/20 transition group">
-                        <!-- Icono cambiado a pincel/diseño diferente para evitar duplicados -->
                         <svg class="w-5 h-5 text-andes-amarillo group-hover:rotate-12 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
                         </svg>
@@ -126,7 +123,6 @@
                     </a>
                 @endif
 
-                {{-- Obtención segura de relaciones con operador Null Safe --}}
                 @php
                     $tiendaUser = auth()->user()->tiendas?->first();
                     $primerTrajeId = $tiendaUser ? $tiendaUser->trajes?->first()?->cod_traje : null;
@@ -150,110 +146,99 @@
                     </a>
 
                     <div x-data="{ openAlquileres: false }">
-    <button @click="openAlquileres = !openAlquileres" 
-            class="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
-        <div class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-andes-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l2 2 4-4M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z"/>
-            </svg>
-            <span>Alquileres</span>
-        </div>
-        <div class="flex items-center gap-2">
-            @php
-                $pendientesCount = \App\Models\Alquiler::whereHas('unidadFisica.traje.tienda', fn($q) => 
-                    $q->where('cod_usuario_tie', auth()->id())
-                )->where('est_alquiler', 'Pendiente_Aprobacion')->count();
-            @endphp
-            @if($pendientesCount > 0)
-                <span class="bg-andes-rojo text-white text-[9px] font-black px-2 py-0.5 rounded-full min-w-[1.2rem] text-center">
-                    {{ $pendientesCount }}
-                </span>
-            @endif
-            <svg :class="openAlquileres ? 'rotate-180' : ''" 
-                 class="w-4 h-4 transition-transform duration-300" 
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-        </div>
-    </button>
+                        <button @click="openAlquileres = !openAlquileres" 
+                                class="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition font-medium">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-andes-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l2 2 4-4M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2z"/>
+                                </svg>
+                                <span>Alquileres</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                @php
+                                    $pendientesCount = \App\Models\Alquiler::whereHas('unidadFisica.traje.tienda', fn($q) => 
+                                        $q->where('cod_usuario_tie', auth()->id())
+                                    )->where('est_alquiler', 'Pendiente_Aprobacion')->count();
+                                @endphp
+                                @if($pendientesCount > 0)
+                                    <span class="bg-andes-rojo text-white text-[9px] font-black px-2 py-0.5 rounded-full min-w-[1.2rem] text-center">
+                                        {{ $pendientesCount }}
+                                    </span>
+                                @endif
+                                <svg :class="openAlquileres ? 'rotate-180' : ''" 
+                                     class="w-4 h-4 transition-transform duration-300" 
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </div>
+                        </button>
 
-    <div x-show="openAlquileres" x-cloak x-transition class="mt-1 ml-4 space-y-1">
-        
-        {{-- Pendientes de aprobación --}}
-        <a href="{{ route('vendedor.alquileres.index', ['estado' => 'Pendiente_Aprobacion']) }}" 
-           class="flex items-center justify-between gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
-            <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
-                Por aprobar
-            </div>
-            @if($pendientesCount > 0)
-                <span class="bg-yellow-400/20 text-yellow-300 text-[9px] font-black px-2 py-0.5 rounded-full">
-                    {{ $pendientesCount }}
-                </span>
-            @endif
-        </a>
+                        <div x-show="openAlquileres" x-cloak x-transition class="mt-1 ml-4 space-y-1">
+                            <a href="{{ route('vendedor.alquileres.index', ['estado' => 'Pendiente_Aprobacion']) }}" 
+                               class="flex items-center justify-between gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+                                    Por aprobar
+                                </div>
+                                @if($pendientesCount > 0)
+                                    <span class="bg-yellow-400/20 text-yellow-300 text-[9px] font-black px-2 py-0.5 rounded-full">
+                                        {{ $pendientesCount }}
+                                    </span>
+                                @endif
+                            </a>
 
-        {{-- Reservados (aprobados, esperando entrega) --}}
-        <a href="{{ route('vendedor.alquileres.index', ['estado' => 'Reservado']) }}" 
-           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
-            <div class="w-2 h-2 rounded-full bg-blue-400"></div>
-            Reservados
-        </a>
+                            <a href="{{ route('vendedor.alquileres.index', ['estado' => 'Reservado']) }}" 
+                               class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+                                <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                                Reservados
+                            </a>
 
-        {{-- Entregados --}}
-        <a href="{{ route('vendedor.alquileres.index', ['estado' => 'Entregado']) }}" 
-           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
-            <div class="w-2 h-2 rounded-full bg-andes-verde"></div>
-            Entregados
-        </a>
+                            <a href="{{ route('vendedor.alquileres.index', ['estado' => 'Entregado']) }}" 
+                               class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+                                <div class="w-2 h-2 rounded-full bg-andes-verde"></div>
+                                Entregados
+                            </a>
 
-        {{-- En mora --}}
-        <a href="{{ route('vendedor.alquileres.index', ['estado' => 'En Mora']) }}" 
-           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
-            <div class="w-2 h-2 rounded-full bg-andes-rojo"></div>
-            En mora
-        </a>
+                            <a href="{{ route('vendedor.alquileres.index', ['estado' => 'En Mora']) }}" 
+                               class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+                                <div class="w-2 h-2 rounded-full bg-andes-rojo"></div>
+                                En mora
+                            </a>
 
-        {{-- Todos --}}
-        <a href="{{ route('vendedor.alquileres.index') }}" 
-           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
-            <div class="w-2 h-2 rounded-full bg-gray-500"></div>
-            Ver todos
-        </a>
+                            <a href="{{ route('vendedor.alquileres.index') }}" 
+                               class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+                                <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+                                Ver todos
+                            </a>
+                        </div>
+                    </div>
 
-    </div>
-    <div x-data="{ openReportesVendedor: false }" class="pt-2">
-    <button @click="openReportesVendedor = !openReportesVendedor" class="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg font-medium transition text-gray-300 hover:text-white hover:bg-white/5">
-        <div class="flex items-center gap-3">
-            <svg class="w-5 h-5 text-andes-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-            </svg>
-            <span>Mis Reportes</span>
-        </div>
-        <svg :class="openReportesVendedor ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-        </svg>
-    </button>
+                    <div x-data="{ openReportesVendedor: false }" class="pt-2">
+                        <button @click="openReportesVendedor = !openReportesVendedor" class="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg font-medium transition text-gray-300 hover:text-white hover:bg-white/5">
+                            <div class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-andes-verde" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m4 6V7m4 10v-3M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                                </svg>
+                                <span>Mis Reportes</span>
+                            </div>
+                            <svg :class="openReportesVendedor ? 'rotate-180' : ''" class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
 
-    <div x-show="openReportesVendedor" x-cloak x-transition class="mt-2 ml-4 space-y-1">
-        <a href="{{ route('vendedor.reportes.index') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
-            <div class="w-2 h-2 rounded-full bg-andes-amarillo"></div>
-            Inventario Parametrizado
-        </a>
+                        <div x-show="openReportesVendedor" x-cloak x-transition class="mt-2 ml-4 space-y-1">
+                            <a href="{{ route('vendedor.reportes.index') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">
+                                <div class="w-2 h-2 rounded-full bg-andes-amarillo"></div>
+                                Inventario Parametrizado
+                            </a>
 
-        <a href="{{ route('vendedor.reportes.sanciones_entregas') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition {{ request()->routeIs('vendedor.reportes.sanciones_entregas') ? 'text-white bg-white/5 font-semibold' : '' }}">
-            <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
-            Sanciones y Entregas
-        </a>
-    </div>
-</div>
+                            <a href="{{ route('vendedor.reportes.sanciones_entregas') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition {{ request()->routeIs('vendedor.reportes.sanciones_entregas') ? 'text-white bg-white/5 font-semibold' : '' }}">
+                                <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                Sanciones y Entregas
+                            </a>
+                        </div>
+                    </div>
                 @endif
-
-                {{-- DROPDOWN DE REPORTES PARA EL VENDEDOR --}}
-                
-</div>
-                {{-- Alquileres con dropdown y badge de pendientes --}}
-
             @endrole
 
             @role('Cliente')
@@ -273,12 +258,10 @@
         </nav>
     </aside>
 
-    <!-- Overlay móvil -->
     <div x-show="sidebarOpen" x-cloak @click="sidebarOpen = false" class="fixed inset-0 z-40 bg-black/50 md:hidden"></div>
 
     <div class="flex-1 flex flex-col h-screen overflow-hidden">
         
-        <!-- Header -->
         <header class="bg-white shadow-sm h-20 flex items-center justify-between px-6 z-10 relative">
             <div class="absolute top-0 left-0 w-full h-1 flex">
                 <div class="w-1/3 bg-andes-rojo"></div>
@@ -293,9 +276,15 @@
                 <h2 class="text-xl font-bold text-gray-800 uppercase tracking-wide">
                     {{ $header ?? 'Panel de Control' }}
                 </h2>
+
+                <a href="{{ url('/') }}" class="hidden sm:flex items-center gap-1.5 ml-2 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-white bg-gray-100 hover:bg-andes-oscuro rounded-full transition-all duration-200 border border-gray-200 shadow-sm group">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5 text-andes-rojo group-hover:text-andes-amarillo transition-colors">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-1.125 1.125-1.125V9.75M8.25 21h8.25" />
+                    </svg>
+                    <span>Volver al Inicio</span>
+                </a>
             </div>
 
-            <!-- Menú usuario -->
             <div class="flex items-center">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
@@ -330,7 +319,6 @@
             </div>
         </header>
 
-        <!-- Contenido principal -->
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
             {{ $slot }}
         </main>

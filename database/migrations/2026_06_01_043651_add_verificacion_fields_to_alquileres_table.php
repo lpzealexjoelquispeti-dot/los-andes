@@ -3,14 +3,14 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     public function up(): void
     {
-        // Modificar el ENUM de est_alquiler para incluir Pendiente_Pago y Pendiente_Aprobacion
-        DB::statement("ALTER TABLE alquileres MODIFY COLUMN est_alquiler 
-            ENUM('Pendiente_Pago','Pendiente_Aprobacion','Reservado','Entregado','Devuelto','En Mora','Cancelado') 
-            NOT NULL DEFAULT 'Pendiente_Pago'");
+        // En PostgreSQL modificamos el tipo de la columna a VARCHAR para albergar los nuevos estados sin conflictos
+        DB::statement("ALTER TABLE alquileres ALTER COLUMN est_alquiler TYPE VARCHAR(50)");
+        DB::statement("ALTER TABLE alquileres ALTER COLUMN est_alquiler SET DEFAULT 'Pendiente_Pago'");
 
         Schema::table('alquileres', function (Blueprint $table) {
             $table->string('nro_celular_cliente', 20)->nullable()->after('garantia');
@@ -33,8 +33,7 @@ return new class extends Migration {
             ]);
         });
 
-        DB::statement("ALTER TABLE alquileres MODIFY COLUMN est_alquiler 
-            ENUM('Reservado','Entregado','Devuelto','En Mora','Cancelado') 
-            NOT NULL DEFAULT 'Reservado'");
+        DB::statement("ALTER TABLE alquileres ALTER COLUMN est_alquiler TYPE VARCHAR(50)");
+        DB::statement("ALTER TABLE alquileres ALTER COLUMN est_alquiler SET DEFAULT 'Reservado'");
     }
 };

@@ -216,7 +216,7 @@
         </div>
 
         {{-- ══ REPOSITORIO DE LA TABLA DE SANCIONES ═══════════════════════════════════════════════ --}}
-        @if(in_array($tipoReporte, ['sanciones', 'ambos']))
+        @if(in_array(($filtros['tipo_reporte'] ?? 'ambos'), ['sanciones', 'ambos']))
         <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
             <div class="mb-6">
                 <h2 class="text-md font-black uppercase tracking-wider text-gray-800 flex items-center gap-2">
@@ -290,7 +290,7 @@
                             </td>
                             <td class="py-4 pl-4 text-gray-500 text-xs max-w-xs truncate font-medium">{{ $s->descripcion ?? '—' }}</td>
                             <td class="py-4 text-right pr-2 text-gray-400 text-xs font-mono whitespace-nowrap">
-                                {{ \Carbon\Carbon::parse($s->created_at)->format('d/m/Y') }}
+                                {{ $s->created_at ? \Carbon\Carbon::parse($s->created_at)->format('d/m/Y') : '—' }}
                             </td>
                         </tr>
                         @endforeach
@@ -311,7 +311,7 @@
         @endif
 
         {{-- ══ REPOSITORIO DE LA TABLA DE ENTREGAS (ALQUILERES) ════════════════════════════════════════════════ --}}
-        @if(in_array($tipoReporte, ['entregas', 'ambos']))
+        @if(in_array(($filtros['tipo_reporte'] ?? 'ambos'), ['entregas', 'ambos']))
         <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
             <div class="mb-6">
                 <h2 class="text-md font-black uppercase tracking-wider text-gray-800 flex items-center gap-2">
@@ -362,10 +362,10 @@
                             </td>
                             <td class="py-4 text-gray-400 text-xs font-bold uppercase tracking-wider">{{ $e->evento->nom_evento ?? '—' }}</td>
                             <td class="py-4 text-gray-600 text-xs font-mono whitespace-nowrap">
-                                {{ \Carbon\Carbon::parse($e->fec_salida)->format('d/m/Y') }}
+                                {{ $e->fec_salida ? \Carbon\Carbon::parse($e->fec_salida)->format('d/m/Y') : '—' }}
                             </td>
                             <td class="py-4 text-gray-600 text-xs font-mono whitespace-nowrap">
-                                {{ \Carbon\Carbon::parse($e->fec_retorno_prev)->format('d/m/Y') }}
+                                {{ $e->fec_retorno_prev ? \Carbon\Carbon::parse($e->fec_retorno_prev)->format('d/m/Y') : '—' }}
                             </td>
                             <td class="py-4 text-xs font-mono whitespace-nowrap
                                 {{ $e->fec_retorno_real && $e->fec_retorno_real > $e->fec_retorno_prev ? 'text-orange-600 font-bold' : 'text-gray-600' }}">
@@ -420,13 +420,13 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Datos Inyectados dinámicamente desde el arreglo de Resumen Real de la vista
-            const montoEntregas = {{ $resumen['monto_entregas'] ?? 0 }};
-            const montoSanciones = {{ $resumen['monto_sanciones'] ?? 0 }};
+            // Datos Inyectados dinámicamente con fallbacks matemáticos limpios a nivel numérico
+            const montoEntregas = Number("{{ $resumen['monto_entregas'] ?? 0 }}") || 0;
+            const montoSanciones = Number("{{ $resumen['monto_sanciones'] ?? 0 }}") || 0;
             
-            const totalEntregasCount = {{ $resumen['total_entregas'] ?? 0 }};
-            const totalSancionesCount = {{ $resumen['total_sanciones'] ?? 0 }};
-            const enMoraCount = {{ $resumen['entregas_en_mora'] ?? 0 }};
+            const totalEntregasCount = Number("{{ $resumen['total_entregas'] ?? 0 }}") || 0;
+            const totalSancionesCount = Number("{{ $resumen['total_sanciones'] ?? 0 }}") || 0;
+            const enMoraCount = Number("{{ $resumen['entregas_en_mora'] ?? 0 }}") || 0;
 
             // Gráfico 1: Dona de Finanzas (Estilo Claro)
             const ctxFinanzas = document.getElementById('chartFinanzas').getContext('2d');
@@ -436,9 +436,9 @@
                     labels: ['Ingresos Alquileres', 'Cargos por Sanción'],
                     datasets: [{
                         data: [montoEntregas, montoSanciones],
-                        backgroundColor: ['#16a34a', '#dc2626'], // Colores corporativos sólidos
+                        backgroundColor: ['#16a34a', '#dc2626'], 
                         borderWidth: 2,
-                        borderColor: '#ffffff' // Separación blanca limpia
+                        borderColor: '#ffffff' 
                     }]
                 },
                 options: {
@@ -448,7 +448,7 @@
                         legend: {
                             position: 'bottom',
                             labels: { 
-                                color: '#4b5563', // Texto gris oscuro legible
+                                color: '#4b5563', 
                                 font: { size: 11, weight: 'bold' } 
                             }
                         }
@@ -465,7 +465,7 @@
                     labels: ['Total Entregas', 'Total Sanciones', 'Órdenes en Mora'],
                     datasets: [{
                         data: [totalEntregasCount, totalSancionesCount, enMoraCount],
-                        backgroundColor: ['#2563eb', '#e11d48', '#ea580c'], // Azul, Rosa, Naranja corporativos
+                        backgroundColor: ['#2563eb', '#e11d48', '#ea580c'], 
                         borderRadius: 8
                     }]
                 },
@@ -482,7 +482,7 @@
                         },
                         y: {
                             ticks: { color: '#4b5563', font: { size: 10 } },
-                            grid: { color: '#f3f4f6' } // Líneas divisorias grises muy suaves
+                            grid: { color: '#f3f4f6' } 
                         }
                     }
                 }

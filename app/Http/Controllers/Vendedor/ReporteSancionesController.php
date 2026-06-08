@@ -15,7 +15,7 @@ use App\Models\Tienda;
 class ReporteSancionesController extends Controller
 {
     /**
-     * Muestra la vista parametrizada de sanciones y entregas.
+     * Muestra la vista parametrizada de sanciones y entregas con gráfica de pastel.
      */
     public function index(Request $request)
     {
@@ -140,13 +140,36 @@ class ReporteSancionesController extends Controller
             'entregas_en_mora'      => $entregas->where('est_alquiler', 'En Mora')->count(),
         ];
 
+        // ─── GENERACIÓN DE GRÁFICA DE PASTEL (QUICKCHART) ───────────────────
+        $graficaPastelUrl = null;
+        if ($resumen['total_sanciones'] > 0) {
+            $conteoTipos = $sanciones->groupBy('tipo_sancion')->map->count();
+
+            $chartConfig = [
+                'type' => 'pie',
+                'data' => [
+                    'labels' => $conteoTipos->keys()->toArray(),
+                    'datasets' => [[
+                        'data' => $conteoTipos->values()->toArray(),
+                        'backgroundColor' => ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6']
+                    ]]
+                ],
+                'options' => [
+                    'plugins' => [
+                        'legend' => ['position' => 'bottom']
+                    ]
+                ]
+            ];
+            $graficaPastelUrl = 'https://quickchart.io/chart?w=400&h=250&c=' . urlencode(json_encode($chartConfig));
+        }
+
         return view('vendedor.reportes.sanciones_entregas', compact(
-            'sanciones', 'entregas', 'tiendas', 'filtros', 'resumen', 'tipoReporte'
+            'sanciones', 'entregas', 'tiendas', 'filtros', 'resumen', 'tipoReporte', 'graficaPastelUrl'
         ));
     }
 
     /**
-     * Descarga el PDF con los mismos filtros y blindaje total de arrays.
+     * Descarga el PDF con los mismos filtros e incluye la gráfica de pastel compatible.
      */
     public function descargarPdf(Request $request)
     {
@@ -188,7 +211,6 @@ class ReporteSancionesController extends Controller
                 $q->where('tipo_sancion', $filtros['tipo_sancion']);
             }
             
-            // 🌟 BLINDAJE CRÍTICO APLICADO AQUÍ: Evita el error de clave indefinida al llamar al PDF
             if (array_key_exists('pagada', $filtros) && $filtros['pagada'] !== null && $filtros['pagada'] !== '') {
                 $q->where('pagada', (bool)$filtros['pagada']);
             }
@@ -231,7 +253,6 @@ class ReporteSancionesController extends Controller
                 $q->whereDate('fec_salida', '<=', $filtros['fec_hasta']);
             }
             
-            // Conservamos el ordenamiento seleccionado por el usuario en el PDF
             $orden = $filtros['orden'] ?? 'fecha_desc';
             match ($orden) {
                 'monto_desc'  => $q->orderByDesc('monto_total'),
@@ -243,7 +264,7 @@ class ReporteSancionesController extends Controller
             $entregas = $q->get();
         }
 
-        // Resumen unificado para los bloques informativos superiores del PDF
+        // Resumen unificado
         $resumen = [
             'total_sanciones'      => $sanciones->count(),
             'monto_sanciones'      => $sanciones->sum('monto_sancion'),
@@ -259,9 +280,32 @@ class ReporteSancionesController extends Controller
             ? $tiendas->firstWhere('cod_tienda', $filtros['cod_tienda'])?->nom_tie ?? 'Todas'
             : 'Todas mis tiendas';
 
-        // Renderizado del PDF horizontal ('landscape')
+        // ─── GENERACIÓN DE GRÁFICA DE PASTEL PARA EL PDF (QUICKCHART) ───────
+        $graficaPastelUrl = null;
+        if ($resumen['total_sanciones'] > 0) {
+            $conteoTipos = $sanciones->groupBy('tipo_sancion')->map->count();
+
+            $chartConfig = [
+                'type' => 'pie',
+                'data' => [
+                    'labels' => $conteoTipos->keys()->toArray(),
+                    'datasets' => [[
+                        'data' => $conteoTipos->values()->toArray(),
+                        'backgroundColor' => ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6']
+                    ]]
+                ],
+                'options' => [
+                    'plugins' => [
+                        'legend' => ['position' => 'bottom']
+                    ]
+                ]
+            ];
+            $graficaPastelUrl = 'https://quickchart.io/chart?w=400&h=250&c=' . urlencode(json_encode($chartConfig));
+        }
+
+        // Renderizado del PDF horizontal ('landscape') incluyendo la gráfica
         $pdf = Pdf::loadView('vendedor.reportes.pdf.sanciones_entregas_pdf', compact(
-            'sanciones', 'entregas', 'resumen', 'filtros', 'tipoReporte', 'tiendasNombre', 'vendedor'
+            'sanciones', 'entregas', 'resumen', 'filtros', 'tipoReporte', 'tiendasNombre', 'vendedor', 'graficaPastelUrl'
         ))->setPaper('a4', 'landscape');
 
         $nombreArchivo = 'reporte_sanciones_entregas_' . now()->format('Ymd_His') . '.pdf';
