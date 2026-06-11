@@ -288,6 +288,15 @@ Route::middleware(['auth', 'role:Vendedor'])->prefix('vendedor')->name('vendedor
         Route::get('/pdf', [ReporteSancionesController::class, 'descargarPdf'])->name('sanciones_entregas.pdf');
     });
 
+    // ─────────────────────────────────────────────────────────────
+    // Reporte: Trajes más gastados (por nivel_uso_alquileres)
+    // ─────────────────────────────────────────────────────────────
+    Route::get('/reportes/trajes-mas-gastados', [\App\Http\Controllers\Vendedor\ReporteTrajesMasGastadosController::class, 'index'])
+        ->name('vendedor.reportes.trajes_mas_gastados');
+
+    Route::get('/reportes/trajes-mas-gastados/pdf', [\App\Http\Controllers\Vendedor\ReporteTrajesMasGastadosController::class, 'descargarPdf'])
+        ->name('vendedor.reportes.trajes_mas_gastados.pdf');
+
     /*
     |--------------------------------------------------------------------------
     | MÓDULO INDUSTRIAL DE IMPRESIÓN Y REPOSICIÓN DE ACCESORIOS

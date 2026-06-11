@@ -76,25 +76,32 @@ class AlquilerController extends Controller
 
         $enMora = Carbon::parse($data['fec_retorno_real'])->greaterThan($alquiler->fec_retorno_prev);
 
-        $alquiler->update([
-            'fec_retorno_real' => $data['fec_retorno_real'],
-            'est_alquiler' => $enMora ? 'En Mora' : 'Devuelto',
-        ]);
+        DB::transaction(function () use ($alquiler, $data, $enMora) {
+            $alquiler->update([
+                'fec_retorno_real' => $data['fec_retorno_real'],
+                'est_alquiler' => $enMora ? 'En Mora' : 'Devuelto',
+            ]);
 
-        $alquiler->unidadFisica?->update([
-            'estado_fisico' => $data['estado_fisico'],
-            'observaciones' => $data['observaciones'] ?? null,
-            'disponibilidad' => $data['estado_fisico'] !== 'En Reparación',
-        ]);
+            $alquiler->unidadFisica?->update([
+                'estado_fisico' => $data['estado_fisico'],
+                'observaciones' => $data['observaciones'] ?? null,
+                'disponibilidad' => $data['estado_fisico'] !== 'En Reparación',
+            ]);
 
-        Notificacion::create([
-            'cod_usuario_not' => $alquiler->cod_usuario_cli,
-            'titulo' => $enMora ? 'Alquiler en mora' : 'Alquiler devuelto',
-            'mensaje' => $enMora
-                ? 'Tu alquiler fue recibido fuera de fecha. Revisa si corresponde una sancion.'
-                : 'Tu alquiler fue devuelto. Ya puedes dejar una valoracion.',
-            'tipo' => $enMora ? 'alerta' : 'exito',
-        ]);
+            // ✅ Incrementar contador de uso cuando el alquiler se cierra como Devuelto.
+            if (! $enMora && $alquiler->unidadFisica?->traje) {
+                $alquiler->unidadFisica->traje->increment('nivel_uso_alquileres');
+            }
+
+            Notificacion::create([
+                'cod_usuario_not' => $alquiler->cod_usuario_cli,
+                'titulo' => $enMora ? 'Alquiler en mora' : 'Alquiler devuelto',
+                'mensaje' => $enMora
+                    ? 'Tu alquiler fue recibido fuera de fecha. Revisa si corresponde una sancion.'
+                    : 'Tu alquiler fue devuelto. Ya puedes dejar una valoracion.',
+                'tipo' => $enMora ? 'alerta' : 'exito',
+            ]);
+        });
 
         return back()->with('success', 'Devolucion registrada correctamente.');
     }

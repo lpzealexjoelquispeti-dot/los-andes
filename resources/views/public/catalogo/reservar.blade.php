@@ -12,7 +12,17 @@
     $color      = $tienda->diseno->color_primario ?? '#16a34a';
     $imagen     = $traje->imagenes->first()?->ruta_img;
     $dias       = 1;
-    $monto      = $traje->pre_alquiler;
+    // Precio efectivo según nivel de uso del traje
+    $nivelUso = (int) ($traje->nivel_uso_alquileres ?? 0);
+    $desc = 0;
+    if ($nivelUso >= 1 && $nivelUso <= 3) {
+        $desc = 0.15;
+    } elseif ($nivelUso >= 4) {
+        $desc = 0.20;
+    }
+
+    $precioEfectivo = round(((1 - $desc) * (float) $traje->pre_alquiler), 2);
+    $monto      = $precioEfectivo;
     $sena       = round($monto * 0.40, 0);
 @endphp
 
@@ -312,17 +322,19 @@
                         <label class="text-[9px] font-black uppercase tracking-widest text-gray-400 block mb-2">
                             Tu número WhatsApp *
                         </label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 pointer-events-none">+591</span>
-                            <input type="text"
-                                   name="nro_celular_cliente"
-                                   required
-                                   maxlength="8"
-                                   pattern="[0-9]{7,8}"
-                                   placeholder="70012345"
-                                   class="wiz-input pl-14"
-                                   value="{{ old('nro_celular_cliente') }}">
-                        </div>
+                        <div class="relative flex items-center">
+    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 pointer-events-none">
+        +591
+    </span>
+    <input type="text"
+           name="nro_celular_cliente"
+           required
+           maxlength="8"
+           pattern="[0-9]{7,8}"
+           placeholder="70012345"
+           class="wiz-input !pl-16 w-full" 
+           value="{{ old('nro_celular_cliente') }}">
+</div>
                         <p class="text-[9px] text-gray-400 mt-1 font-medium">El vendedor te contactará por este número para coordinar la entrega</p>
                     </div>
 
@@ -598,9 +610,10 @@
 </div>
 
 <script>
-    const precioBase = {{ $traje->pre_alquiler }};
-    const trajeNombre = @json(str_replace([' - Varón', ' - Dama'], '', $traje->nom_traje));
-    const tiendaNombre = @json($tienda->nom_tie);
+ 
+const precioBase   = {{ $precioEfectivo ?? $unidad->traje->pre_alquiler }};
+const trajeNombre  = @json($trajeNombre);
+const tiendaNombre = @json($tienda->nom_tie);
 
     // ─── Mensaje predefinido para pedir el QR de Yape por WhatsApp ───
     function actualizarMensajeYape() {
@@ -627,6 +640,34 @@
 
         btn.href = btn.dataset.base + '?text=' + encodeURIComponent(mensaje);
     }
+    function calcularPrecio() {
+    const salida  = document.getElementById('fec_salida').value;
+    const retorno = document.getElementById('fec_retorno').value;
+    if (!salida || !retorno) return;
+
+    const diff = Math.round((new Date(retorno) - new Date(salida)) / 86400000);
+
+    let total;
+    if (diff === 0)     total = precioBase;               // mismo día
+    else if (diff === 1) total = precioBase;              // 24h
+    else if (diff === 2) total = precioBase * 1.5;        // 48h
+    else                 total = precioBase * (diff - 1) * 1.5;
+
+    total = Math.round(total);
+    const sena = Math.round(total * 0.4);
+
+    document.getElementById('side-dias').textContent      = diff === 0 ? 1 : diff;
+    document.getElementById('side-total').textContent     = 'Bs. ' + total.toLocaleString();
+    document.getElementById('side-sena').textContent      = 'Bs. ' + sena;
+    document.getElementById('sena-display').textContent   = 'Bs. ' + sena;
+    document.getElementById('total-display').textContent  = 'Bs. ' + total.toLocaleString();
+    document.getElementById('resumen-sena').textContent   = 'Bs. ' + sena;
+    document.getElementById('paso-sena').textContent      = 'Bs. ' + sena;
+
+    document.getElementById('fec_retorno').min = salida;
+
+    actualizarMensajeYape();
+}
 
     // ─── Navegación wizard ───
     function goTo(step) {
@@ -655,16 +696,19 @@
     }
 
     // ─── Validaciones por paso ───
-    function validarPaso1() {
-        const evento  = document.getElementById('nom_evento').value.trim();
-        const salida  = document.getElementById('fec_salida').value;
-        const retorno = document.getElementById('fec_retorno').value;
-        if (!evento)  { alert('Ingresa el nombre del evento.'); return false; }
-        if (!salida)  { alert('Selecciona la fecha de salida.'); return false; }
-        if (!retorno) { alert('Selecciona la fecha de retorno.'); return false; }
-        if (retorno < salida) { alert('La fecha de retorno debe ser igual o posterior a la salida.'); return false; }
-        return true;
-    }
+  function validarPaso1() {
+    const evento  = document.getElementById('nom_evento').value.trim();
+    const salida  = document.getElementById('fec_salida').value;
+    const retorno = document.getElementById('fec_retorno').value;
+    
+    console.log({evento, salida, retorno}); // ← temporal para debug
+    
+    if (!evento)  { alert('Ingresa el nombre del evento.'); return false; }
+    if (!salida)  { alert('Selecciona la fecha de salida.'); return false; }
+    if (!retorno) { alert('Selecciona la fecha de retorno.'); return false; }
+    if (retorno < salida) { alert('La fecha de retorno debe ser igual o posterior a la salida.'); return false; }
+    return true;
+}
 
     function validarPaso2() {
         const cel     = document.querySelector('[name=nro_celular_cliente]').value.trim();
@@ -677,28 +721,7 @@
     }
 
     // ─── Cálculo dinámico de días y precios ───
-    function calcularPrecio() {
-        const salida  = document.getElementById('fec_salida').value;
-        const retorno = document.getElementById('fec_retorno').value;
-        if (!salida || !retorno) return;
-
-        const diff = Math.max(1, Math.round((new Date(retorno) - new Date(salida)) / 86400000) + 1);
-        const total = diff * precioBase;
-        const sena  = Math.round(total * 0.4);
-
-        document.getElementById('side-dias').textContent  = diff;
-        document.getElementById('side-total').textContent = 'Bs. ' + total.toLocaleString();
-        document.getElementById('side-sena').textContent  = 'Bs. ' + sena;
-        document.getElementById('sena-display').textContent = 'Bs. ' + sena;
-        document.getElementById('total-display').textContent = 'Bs. ' + total.toLocaleString();
-        document.getElementById('resumen-sena').textContent  = 'Bs. ' + sena;
-        document.getElementById('paso-sena').textContent     = 'Bs. ' + sena;
-
-        // Fecha retorno mínima = fecha salida
-        document.getElementById('fec_retorno').min = salida;
-
-        actualizarMensajeYape();
-    }
+    
 
     document.getElementById('fec_salida').addEventListener('change', calcularPrecio);
     document.getElementById('fec_retorno').addEventListener('change', calcularPrecio);

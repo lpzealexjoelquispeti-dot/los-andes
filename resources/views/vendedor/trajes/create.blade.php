@@ -76,9 +76,69 @@
                         <x-text-input id="pre_alquiler" name="pre_alquiler" type="number" step="0.50" min="0"
                                       class="block mt-1 w-full @error('pre_alquiler') border-red-500 focus:ring-red-500 @enderror" 
                                       placeholder="Bs. 0.00" 
-                                      value="{{ old('pre_alquiler') }}" required   />
+                                      value="{{ old('pre_alquiler') }}" required />
                         @error('pre_alquiler') <p class="text-red-500 text-xs mt-1 font-bold">⚠️ {{ $message }}</p> @enderror
+
+                        {{-- Precios estimados por puesta (vista previa, no histórico) --}}
+                        <div class="mt-4 p-4 rounded-xl border border-emerald-100 bg-emerald-50">
+                            <p class="text-[11px] font-black uppercase tracking-widest text-emerald-700 mb-2">Vista previa de descuento por puesta</p>
+
+                            @php
+                                $basePrev = old('pre_alquiler');
+                                $basePrev = is_numeric($basePrev) ? (float)$basePrev : 0;
+                                $precio2 = round($basePrev * 0.85, 2);
+                                $precio3 = round($basePrev * 0.80, 2);
+                            @endphp
+
+                            <div class="grid grid-cols-1 gap-2 text-xs font-bold">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-700">1ra puesta</span>
+                                    <span class="text-gray-900">Bs. <span id="prev-1ra">{{ number_format($basePrev, 2, '.', '') }}</span></span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-700">2da–4ta puesta (−15%)</span>
+                                    <span class="text-gray-900">Bs. <span id="prev-2da">{{ number_format($precio2, 2, '.', '') }}</span></span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-gray-700">3ra+ (desde 5ta) (−20%)</span>
+                                    <span class="text-gray-900">Bs. <span id="prev-3ra">{{ number_format($precio3, 2, '.', '') }}</span>
+                                </div>
+                            </div>
+
+                            <p class="text-[10px] font-semibold text-gray-500 mt-2">
+                                Nota: este cálculo es una estimación en base al precio base; el precio real depende del historial de reservas.
+                            </p>
+                        </div>
                     </div>
+
+                    {{-- Actualiza la vista previa cuando el vendedor cambia el precio base --}}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const input = document.getElementById('pre_alquiler');
+                            const el1 = document.getElementById('prev-1ra');
+                            const el2 = document.getElementById('prev-2da');
+                            const el3 = document.getElementById('prev-3ra');
+
+                            const compute = () => {
+                                if (!input) return;
+                                const base = parseFloat(input.value);
+                                const b = isNaN(base) ? 0 : base;
+
+                                const v1 = b;
+                                const v2 = b * 0.85;
+                                const v3 = b * 0.80;
+
+                                if (el1) el1.textContent = v1.toFixed(2);
+                                if (el2) el2.textContent = v2.toFixed(2);
+                                if (el3) el3.textContent = v3.toFixed(2);
+                            };
+
+                            if (input) {
+                                input.addEventListener('input', compute);
+                                compute();
+                            }
+                        });
+                    </script>
 
                     {{-- 5. Color Dominante --}}
                     <div class="md:col-span-1">
@@ -142,7 +202,7 @@
                         <div>
                             <x-input-label value="Tallas en Stock (Generará correlativos automáticos)" class="font-black text-xs text-gray-500 uppercase" /><span class="text-red-500">*</span>
                             <div class="flex flex-wrap gap-2 mt-2">
-                                @foreach(['S', 'M', 'L', 'XL', 'Personalizado'] as $talla)
+                                @foreach(['S', 'M', 'L', 'XL'] as $talla)
                                     <label class="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border cursor-pointer select-none">
                                         <input type="checkbox" name="tallas_varon[]" value="{{ $talla }}" 
                                                {{ is_array(old('tallas_varon')) && in_array($talla, old('tallas_varon')) ? 'checked' : '' }}

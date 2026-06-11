@@ -76,6 +76,33 @@
              }">
 
             <form x-ref="form" action="{{ route('public.catalogo.index') }}" method="GET" class="relative group">
+
+                {{-- Filtro por puesta (1ra/2da/3ra) --}}
+                <div class="mt-3 flex flex-wrap gap-2">
+                    @php
+                        $puestaActual = request('puesta', 'all');
+                    @endphp
+                    <button type="button" onclick="document.getElementById('input-puesta').value='all'; this.closest('form').submit();"
+                            class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase border-2 transition-all {{ $puestaActual==='all' ? 'bg-andes-verde text-white border-andes-verde' : 'bg-white border-gray-200 text-gray-700 hover:border-andes-verde' }}">
+                        Todas
+                    </button>
+                    <button type="button" onclick="document.getElementById('input-puesta').value='1'; this.closest('form').submit();"
+                            class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase border-2 transition-all {{ $puestaActual==='1' ? 'bg-andes-verde text-white border-andes-verde' : 'bg-white border-gray-200 text-gray-700 hover:border-andes-verde' }}">
+                        1ra
+                    </button>
+                    <button type="button" onclick="document.getElementById('input-puesta').value='2'; this.closest('form').submit();"
+                            class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase border-2 transition-all {{ $puestaActual==='2' ? 'bg-andes-verde text-white border-andes-verde' : 'bg-white border-gray-200 text-gray-700 hover:border-andes-verde' }}">
+                        2da
+                    </button>
+                    <button type="button" onclick="document.getElementById('input-puesta').value='3'; this.closest('form').submit();"
+                            class="px-3 py-1.5 rounded-full text-[10px] font-black uppercase border-2 transition-all {{ $puestaActual==='3' ? 'bg-andes-verde text-white border-andes-verde' : 'bg-white border-gray-200 text-gray-700 hover:border-andes-verde' }}">
+                        3ra
+                    </button>
+                    <input type="hidden" name="puesta" id="input-puesta" value="{{ $puestaActual }}">
+                </div>
+
+            
+
                 <input
                     type="text"
                     name="q"
@@ -211,7 +238,7 @@
                     <div class="px-8 pb-8 flex items-center justify-between">
                         <div class="flex flex-col">
                             <span class="text-[9px] font-black text-gray-300 uppercase tracking-widest">Precio Base</span>
-                            <span class="text-sm font-black uppercase" style="color: {{ $colorTienda }}">Bs. {{ number_format($traje->pre_alquiler, 0) }}</span>
+                            <span class="text-sm font-black uppercase" style="color: {{ $colorTienda }}">Bs. {{ number_format($traje->precio_efectivo ?? $traje->pre_alquiler, 0) }}</span>
                         </div>
                         <div class="p-3 bg-gray-50 rounded-xl group-hover:bg-gray-100 transition-colors">
                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L4 9z"></path></svg>
@@ -362,8 +389,8 @@
                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Precio alquiler / día</p>
                             <p class="text-2xl font-black" :style="'color: ' + currentTraje.color_tienda">
                                 Bs. <span x-text="generoSeleccionado === 'F' && currentTraje.variante_femenina 
-                                    ? currentTraje.variante_femenina.pre_alquiler 
-                                    : currentTraje.pre_alquiler">
+                                    ? (currentTraje.variante_femenina.precio_efectivo ?? currentTraje.variante_femenina.pre_alquiler)
+                                    : (currentTraje.precio_efectivo ?? currentTraje.pre_alquiler)">
                                 </span>
                             </p>
                         </div>

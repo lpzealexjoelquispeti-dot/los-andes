@@ -59,9 +59,24 @@ class AlquilerController extends Controller
                 'ubicacion'  => $data['ubicacion'] ?? null,
             ]);
 
+           
             $dias   = Carbon::parse($data['fec_salida'])->diffInDays(Carbon::parse($data['fec_retorno_prev'])) + 1;
-            $monto  = $dias * (float) $unidad->traje->pre_alquiler;
-            $sena   = round($monto * 0.40, 2); 
+
+            // ✅ Precio efectivo según nivel de uso:
+            // 1ra (nivel 0): 0% desc
+            // 2da-4ta (nivel 1..3): -15%
+            // 3ra+ (nivel >=4): -20%
+            $nivel = (int) ($unidad->traje->nivel_uso_alquileres ?? 0);
+            $desc = 0;
+            if ($nivel >= 1 && $nivel <= 3) {
+                $desc = 0.15;
+            } elseif ($nivel >= 4) {
+                $desc = 0.20;
+            }
+
+            $precioEfectivo = round(((1 - $desc) * (float) $unidad->traje->pre_alquiler), 2);
+            $monto  = $dias * $precioEfectivo;
+            $sena   = round($monto * 0.40, 2);
 
             $alquiler = Alquiler::create([
                 'cod_usuario_cli'       => auth()->id(),

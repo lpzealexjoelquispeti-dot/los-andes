@@ -21,16 +21,17 @@ class Traje extends Model
     ];
 
     protected $fillable = [
-        'nom_traje', 
-        'des_traje', 
-        'pre_alquiler', 
-        'talla_traje', 
+        'nom_traje',
+        'des_traje',
+        'pre_alquiler',
+        'talla_traje',
         'color_traje',
         'genero',
-        'fraternidad',      // 🌟 ADICIONADO: Permite el guardado seguro del nuevo campo
-        'cod_tienda_traje', // Llave foránea hacia Tiendas
-        'cod_danza_traje',   // Llave foránea hacia Danzas
-        'cod_traje_padre'   
+        'fraternidad',
+        'nivel_uso_alquileres',
+        'cod_tienda_traje',
+        'cod_danza_traje',
+        'cod_traje_padre'
     ];
 
     /**
