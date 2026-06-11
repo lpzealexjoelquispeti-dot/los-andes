@@ -24,7 +24,7 @@ class ReporteTrajesMasGastadosController extends Controller
             'fec_desde',
             'fec_hasta',
             'top',
-            'puesta_min', // 1|2|3|all
+            'puesta_min',
         ]);
 
         $top = (int) ($filtros['top'] ?? 10);
@@ -35,33 +35,21 @@ class ReporteTrajesMasGastadosController extends Controller
         $fechaDesde = $filtros['fec_desde'] ?? now()->startOfMonth()->toDateString();
         $fechaHasta = $filtros['fec_hasta'] ?? now()->toDateString();
 
-        // Trajes con top por nivel_uso_alquileres (valor guardado)
-        // Nota: el filtro por fecha se aplica a partir de la idea: nivel se incrementa al Devuelto.
-        // Sin embargo, tu BD no tiene aún una tabla de “log de incremento”, entonces el filtro por fecha
-        // solo se utiliza como aproximación en la carga del top si tuvieras un evento. Por ahora,
-        // calculamos el top por nivel acumulado y presentamos fecha como metadato del reporte.
+        // ✅ Resuelve el cod_tienda antes del query
+        $codTienda = !empty($filtros['cod_tienda'])
+            ? $filtros['cod_tienda']
+            : Tienda::where('cod_usuario_tie', $vendedor->id)
+                ->whereNull('deleted_at')
+                ->value('cod_tienda');
 
         $trajesQ = Traje::query()
-            ->where('cod_tienda_traje', function () use ($vendedor, $filtros) {
-                // Si el filtro de tienda viene, usamos esa tienda.
-                // Si no viene, usamos la primera tienda del vendedor (en tu modelo actual típicamente 1 tienda).
-                if (!empty($filtros['cod_tienda'])) {
-                    return $filtros['cod_tienda'];
-                }
-                $t = Tienda::where('cod_usuario_tie', $vendedor->id)->whereNull('deleted_at')->first();
-                return $t?->cod_tienda ?? null;
-            })
+            ->where('cod_tienda_traje', $codTienda)
             ->whereNull('cod_traje_padre')
             ->orderByDesc('nivel_uso_alquileres')
             ->orderByDesc('cod_traje')
             ->take($top);
 
-        // Filtro por puesta mínima usando nivel_uso_alquileres
         $trajesQ->when($puestaMin !== 'all', function ($q) use ($puestaMin) {
-            // mapeo:
-            // 1ra => nivel 0
-            // 2da => nivel 1..3
-            // 3ra+ => nivel >=4
             if ($puestaMin === '2') {
                 $q->whereBetween('nivel_uso_alquileres', [1, 3]);
             } elseif ($puestaMin === '3') {
@@ -74,7 +62,6 @@ class ReporteTrajesMasGastadosController extends Controller
         $trajes = $trajesQ->with(['danza:cod_danza,nom_danza', 'imagenes', 'tienda.diseno'])
             ->get();
 
-        // Agrupación para gráfico por “puesta”
         $puestaCounts = [
             '1ra' => 0,
             '2da' => 0,
@@ -119,14 +106,15 @@ class ReporteTrajesMasGastadosController extends Controller
         $fechaDesde = $filtros['fec_desde'] ?? now()->startOfMonth()->toDateString();
         $fechaHasta = $filtros['fec_hasta'] ?? now()->toDateString();
 
+        // ✅ Resuelve el cod_tienda antes del query
+        $codTienda = !empty($filtros['cod_tienda'])
+            ? $filtros['cod_tienda']
+            : Tienda::where('cod_usuario_tie', $vendedor->id)
+                ->whereNull('deleted_at')
+                ->value('cod_tienda');
+
         $trajesQ = Traje::query()
-            ->where('cod_tienda_traje', function () use ($vendedor, $filtros) {
-                if (!empty($filtros['cod_tienda'])) {
-                    return $filtros['cod_tienda'];
-                }
-                $t = Tienda::where('cod_usuario_tie', $vendedor->id)->whereNull('deleted_at')->first();
-                return $t?->cod_tienda ?? null;
-            })
+            ->where('cod_tienda_traje', $codTienda)
             ->whereNull('cod_traje_padre')
             ->orderByDesc('nivel_uso_alquileres')
             ->orderByDesc('cod_traje')
@@ -171,4 +159,3 @@ class ReporteTrajesMasGastadosController extends Controller
         return $pdf->download($nombreArchivo);
     }
 }
-

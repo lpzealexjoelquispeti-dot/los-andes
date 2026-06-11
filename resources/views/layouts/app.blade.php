@@ -236,6 +236,12 @@
                                 <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
                                 Sanciones y Entregas
                             </a>
+
+                            <a href="{{ route('vendedor.reportes.trajes_mas_gastados') }}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition {{ request()->routeIs('vendedor.reportes.trajes_mas_gastados') ? 'text-white bg-white/5 font-semibold' : '' }}">
+                                <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
+                                Trajes más usados
+                            </a>
+
                         </div>
                     </div>
                 @endif
